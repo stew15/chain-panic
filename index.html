@@ -322,6 +322,7 @@ async function initAuth() {
         badge.classList.add('show'); loginBtn.classList.remove('show');
         document.getElementById('user-name').textContent = (currentUsername || user.email.split('@')[0]).toUpperCase();
         document.getElementById('auth-modal').classList.remove('show');
+        resumeFromModal();
       }
       updateSettingsUser();
     } else {
@@ -359,7 +360,8 @@ async function doLogin() {
   try {
     setAuthMsg('Logging in…', false);
     await fbAuth.signInWithEmailAndPassword(email, pass);
-    setAuthMsg('', false);
+    // Don't clear message here — onAuthStateChanged handles all post-login UI:
+    // verified → closes modal; unverified → shows resend prompt.
   } catch(e) {
     setAuthMsg(authError(e.code, 'Login failed — please try again.'), true);
   }
