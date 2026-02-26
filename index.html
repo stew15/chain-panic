@@ -174,8 +174,8 @@ input[type=range]::-webkit-slider-thumb { -webkit-appearance:none; width:20px; h
     <div class="how-row"><span class="how-icon">🔵</span><div class="how-text"><b>BLUE BALL</b> is fixed at center — your life. Enemies or blast touching it = game over.</div></div>
     <div class="how-row"><span class="how-icon">🟡</span><div class="how-text"><b>DRAG</b> the yellow ball to swing the chain around. Keep moving — don't sit still!</div></div>
     <div class="how-row"><span class="how-icon">⛓</span><div class="how-text"><b>CHAIN</b> enemies by hitting them with the yellow ball. They orbit behind you (max 5). Chain 2+ to activate your multiplier!</div></div>
-    <div class="how-row"><span class="how-icon">💥</span><div class="how-text"><b>FAST SWIPE</b> to fling all chained enemies as projectiles. They fly and destroy free enemies. Each successful fling adds <b>+1</b> to your streak — miss and it resets to zero!</div></div>
-    <div class="how-row"><span class="how-icon">✖️</span><div class="how-text"><b>MULTIPLIER</b> (bottom-right) = chain size + fling streak. Score on every kill shows as <b>pts × mult</b>. Never miss a fling to keep it growing!</div></div>
+    <div class="how-row"><span class="how-icon">💥</span><div class="how-text"><b>FAST SWIPE</b> to fling all chained enemies as projectiles. They fly and destroy free enemies on impact. Each fling that scores at least one kill adds <b>+1 STREAK</b> — miss a fling entirely and it resets to zero!</div></div>
+    <div class="how-row"><span class="how-icon">✖️</span><div class="how-text"><b>SCORE</b> per kill = enemy pts × (CHAIN + STREAK). The bottom-right HUD shows <b>CHAIN x{n}</b> (enemies currently carried) and <b>STREAK x{n}</b> (consecutive kill-flings). Build both to multiply every point — the streak is the hard part to maintain!</div></div>
     <div class="how-row"><span class="how-icon">🌡️</span><div class="how-text"><b>HEAT</b> builds while carrying enemies and spinning fast. Go red and your chain <b>SNAPS</b> — you lose all chained enemies. Let it cool by slowing down.</div></div>
     <div class="how-row"><span class="how-icon">💣</span><div class="how-text"><b>BOMBS</b> (orange octagon) have a 2.5s fuse ring. Fling them before it closes! Free bombs explode with a blast radius — touching either ball = game over.</div></div>
     <div class="how-row"><span class="how-icon">⚠️</span><div class="how-text">Later waves add <b>Dodgers</b> (evade your ball), <b>Tanks</b> (move in bursts, accelerate over time), and <b>Splitters</b> (split on death). Stay unpredictable!</div></div>
@@ -1230,7 +1230,7 @@ function checkCollisions(){
         if(flingKillCount===0){const ns=flingStreak+1;if(ns>bestFlingStreak)bestFlingStreak=ns;flingStreak=ns;} // first kill of fling → streak up
         flingKillCount++;
         const tm=Math.max(1,flingMult+flingStreak);const pts=Math.round(e.pts*tm);score+=pts;flingCount++;
-        const killTxt=tm>1?`${e.pts} x${tm}`:`+${pts}`;txt(e.x,e.y-22,killTxt,e.col,18);e.dead=true;shake(6);if(flingCount===5)txt(W/2,H*.84,'NICE SHOT!','#ffff00',34);if(flingCount===15)txt(W/2,H*.84,'ON FIRE!!','#ff6600',40);if(flingCount===30)txt(W/2,H*.84,'UNSTOPPABLE!!!','#ff44ff',46);}
+        txt(e.x,e.y-22,`+${pts}`,e.col,18);e.dead=true;shake(6);if(flingCount===5)txt(W/2,H*.84,'NICE SHOT!','#ffff00',34);if(flingCount===15)txt(W/2,H*.84,'ON FIRE!!','#ff6600',40);if(flingCount===30)txt(W/2,H*.84,'UNSTOPPABLE!!!','#ff44ff',46);}
       const spd=Math.sqrt(p.vx*p.vx+p.vy*p.vy)||0.001;if(spd<2.5){p.vx=p.vx/spd*2.5;p.vy=p.vy/spd*2.5;}
     }
   });});
@@ -1260,7 +1260,7 @@ function checkBombExplosions(){
         t.hp--;
         if(t.hp<=0){
           const tm=Math.max(1,flingMult+flingStreak);const pts=Math.round(t.pts*tm);
-          score+=pts;spark(t.x,t.y,t.col,12,5);const bkillTxt=tm>1?`${t.pts} x${tm}`:`+${pts}`;txt(t.x,t.y-22,bkillTxt,t.col,18);t.dead=true;
+          score+=pts;spark(t.x,t.y,t.col,12,5);txt(t.x,t.y-22,`+${pts}`,t.col,18);t.dead=true;
         }
       }
     });
@@ -1320,7 +1320,7 @@ function drawHUD(){
   const hg=ctx.createLinearGradient(bx,by,bx+bw,by);hg.addColorStop(0,'#00ff88');hg.addColorStop(.5,'#ffaa00');hg.addColorStop(1,'#ff2200');ctx.fillStyle=hg;ctx.shadowBlur=chain.heat>.6?10:0;ctx.shadowColor='#ff4400';ctx.fillRect(bx,by,bw*chain.heat,bh);ctx.font=`bold 13px 'Courier New'`;ctx.fillStyle='rgba(255,255,255,.6)';ctx.shadowBlur=0;ctx.fillText('HEAT',W-20,by+bh+14);ctx.restore();
   if(waveLabelTimer>0){const a=Math.min(1,waveLabelTimer)*Math.min(1,waveLabelTimer/.4);ctx.save();ctx.globalAlpha=a;ctx.font=`bold 26px 'Courier New'`;ctx.textAlign='center';ctx.fillStyle='#00ffff';ctx.shadowBlur=18;ctx.shadowColor='#00ffff';ctx.fillText(waveLabel,W/2,H/2+90);ctx.restore();}
 
-  if(chain.chained.length>=2&&flingCount===0){const p=.5+Math.sin(bgT*5)*.5;ctx.save();ctx.globalAlpha=p*.9;ctx.font=`14px 'Courier New'`;ctx.textAlign='center';ctx.fillStyle='#00ffff';ctx.shadowBlur=8;ctx.shadowColor='#00ffff';ctx.fillText('FAST SWIPE TO FLING!',W/2,H-50);ctx.restore();}
+  if(chain.chained.length>=2&&flingCount===0){const p=.5+Math.sin(bgT*5)*.5;ctx.save();ctx.globalAlpha=p*.9;ctx.font=`14px 'Courier New'`;ctx.textAlign='center';ctx.fillStyle='#00ffff';ctx.shadowBlur=8;ctx.shadowColor='#00ffff';ctx.fillText('FAST SWIPE TO FLING!',W/2,H/2-70);ctx.restore();}
   // ─── HUD: CHAIN + STREAK (bottom-right) ───
   ctx.save();ctx.textAlign='right';
   // CHAIN — cyan, steady
