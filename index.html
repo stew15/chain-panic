@@ -332,16 +332,35 @@ async function initAuth() {
   });
 }
 
+function authError(code, fallback) {
+  const map = {
+    'auth/invalid-credential':        'Incorrect email or password.',
+    'auth/invalid-login-credentials': 'Incorrect email or password.',
+    'auth/wrong-password':            'Incorrect email or password.',
+    'auth/user-not-found':            'No account found with that email.',
+    'auth/invalid-email':             'Please enter a valid email address.',
+    'auth/email-already-in-use':      'An account with that email already exists.',
+    'auth/weak-password':             'Password must be at least 6 characters.',
+    'auth/too-many-requests':         'Too many attempts — please wait a moment and try again.',
+    'auth/user-disabled':             'This account has been disabled.',
+    'auth/network-request-failed':    'Network error — check your connection and try again.',
+    'auth/missing-password':          'Please enter your password.',
+    'auth/missing-email':             'Please enter your email address.',
+    'auth/operation-not-allowed':     'Sign-in is not available right now.',
+  };
+  return map[code] || fallback;
+}
+
 async function doLogin() {
   const email = document.getElementById('inp-email').value.trim();
   const pass  = document.getElementById('inp-pass').value;
-  if (!email || !pass) { setAuthMsg('Please fill in all fields', true); return; }
+  if (!email || !pass) { setAuthMsg('Please fill in all fields.', true); return; }
   try {
     setAuthMsg('Logging in…', false);
     await fbAuth.signInWithEmailAndPassword(email, pass);
     setAuthMsg('', false);
   } catch(e) {
-    setAuthMsg(e.code === 'auth/wrong-password' || e.code === 'auth/user-not-found' ? 'Invalid email or password' : e.message, true);
+    setAuthMsg(authError(e.code, 'Login failed — please try again.'), true);
   }
 }
 
@@ -351,28 +370,29 @@ async function doSignup() {
   const pass  = document.getElementById('inp-su-pass').value;
   const nameErr = validateUsername(name);
   if (nameErr) { setAuthMsg(nameErr, true); return; }
-  if (!email) { setAuthMsg('Please enter your email', true); return; }
-  if (pass.length < 6) { setAuthMsg('Password must be at least 6 characters', true); return; }
+  if (!email) { setAuthMsg('Please enter your email.', true); return; }
+  if (pass.length < 6) { setAuthMsg('Password must be at least 6 characters.', true); return; }
   try {
     setAuthMsg('Creating account…', false);
     const cred = await fbAuth.createUserWithEmailAndPassword(email, pass);
-    // Save username to Firestore
     if (fbDb) await fbDb.collection('users').doc(cred.user.uid).set({ username: name, email });
     currentUsername = name; localStorage.setItem('cp_username', name);
     await cred.user.sendEmailVerification();
-    setAuthMsg('Account created! Check your email to verify before your scores appear on the leaderboard.', false);
+    setAuthMsg('Account created! Check your email to verify — check spam if it doesn\'t arrive.', false);
   } catch(e) {
-    setAuthMsg(e.code === 'auth/email-already-in-use' ? 'Email already in use' : e.message, true);
+    setAuthMsg(authError(e.code, 'Sign up failed — please try again.'), true);
   }
 }
 
 async function doForgotPassword() {
   const email = document.getElementById('inp-email').value.trim();
-  if (!email) { setAuthMsg('Enter your email above first', true); return; }
+  if (!email) { setAuthMsg('Enter your email above first.', true); return; }
   try {
     await fbAuth.sendPasswordResetEmail(email);
-    setAuthMsg('Reset email sent! Check your inbox.', false);
-  } catch(e) { setAuthMsg('Could not send reset email', true); }
+    setAuthMsg('Reset email sent — check your inbox and spam folder.', false);
+  } catch(e) {
+    setAuthMsg(authError(e.code, 'Could not send reset email — please try again.'), true);
+  }
 }
 
 async function logout() {
