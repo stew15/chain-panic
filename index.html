@@ -384,9 +384,15 @@ document.getElementById('tab-signup').addEventListener('click', () => {
 document.getElementById('btn-do-login').addEventListener('click', doLogin);
 document.getElementById('btn-do-signup').addEventListener('click', doSignup);
 document.getElementById('btn-forgot').addEventListener('click', doForgotPassword);
-document.getElementById('btn-auth-close').addEventListener('click', () => document.getElementById('auth-modal').classList.remove('show'));
+document.getElementById('btn-auth-close').addEventListener('click', () => {
+  document.getElementById('auth-modal').classList.remove('show');
+  resumeFromModal();
+});
 document.getElementById('user-badge').addEventListener('click', () => openSettings());
-document.getElementById('btn-login').addEventListener('click', () => document.getElementById('auth-modal').classList.add('show'));
+document.getElementById('btn-login').addEventListener('click', () => {
+  pauseForModal();
+  document.getElementById('auth-modal').classList.add('show');
+});
 document.getElementById('btn-how-close').addEventListener('click', () => document.getElementById('how-modal').classList.remove('show'));
 
 // ─── SETTINGS MODAL ──────────────────────
@@ -398,7 +404,27 @@ function updateSettingsUser() {
     info.innerHTML = `Signed in as <b>${currentUsername || currentUser.email}</b>${currentUser.emailVerified ? '' : ' <span style="color:#ffaa00">(unverified)</span>'}`;
   } else { sec.style.display = 'none'; }
 }
+// ─── MODAL PAUSE HELPERS ─────────────────
+let pausedForModal = false;
+function pauseForModal() {
+  if (state === ST.PLAY) {
+    state = ST.PAUSE; stopBgMusic();
+    document.getElementById('btn-pause').textContent = 'RESUME';
+    pausedForModal = true;
+  }
+}
+function resumeFromModal() {
+  if (pausedForModal) {
+    pausedForModal = false;
+    if (state === ST.PAUSE) {
+      state = ST.PLAY; lastTime = performance.now(); startBgMusic();
+      document.getElementById('btn-pause').textContent = 'PAUSE';
+    }
+  }
+}
+
 function openSettings() {
+  pauseForModal();
   const sm = document.getElementById('sl-music');
   const ss = document.getElementById('sl-sfx');
   sm.value = musicVol; document.getElementById('lbl-music').textContent = Math.round(musicVol*100)+'%';
@@ -420,15 +446,20 @@ document.getElementById('sl-sfx').addEventListener('input', e => {
 document.getElementById('btn-signout').addEventListener('click', () => {
   logout();
   document.getElementById('settings-modal').classList.remove('show');
+  resumeFromModal();
 });
-document.getElementById('btn-settings-close').addEventListener('click', () => document.getElementById('settings-modal').classList.remove('show'));
+document.getElementById('btn-settings-close').addEventListener('click', () => {
+  document.getElementById('settings-modal').classList.remove('show');
+  resumeFromModal();
+});
 
 // ─── LEADERBOARD MODAL ───────────────────
 let lbModalData = null, lbModalTab = 'daily', lbModalLoading = false;
 let lbRaf = null;
 
 function openLeaderboard() {
-  if (!currentUser) { document.getElementById('auth-modal').classList.add('show'); return; }
+  if (!currentUser) { pauseForModal(); document.getElementById('auth-modal').classList.add('show'); return; }
+  pauseForModal();
   const modal = document.getElementById('lb-modal');
   const cv = document.getElementById('lb-canvas');
   modal.classList.add('show');
@@ -496,7 +527,10 @@ document.getElementById('lb-canvas').addEventListener('click', e => {
     tabs.forEach((tab,i)=>{ if(mx>=tx0+i*tw&&mx<=tx0+(i+1)*tw){ lbModalTab=tab; renderLbModal(); }});
   }
 });
-document.getElementById('btn-lb-close').addEventListener('click', () => document.getElementById('lb-modal').classList.remove('show'));
+document.getElementById('btn-lb-close').addEventListener('click', () => {
+  document.getElementById('lb-modal').classList.remove('show');
+  resumeFromModal();
+});
 
 async function submitScore(sc, fc, mc) {
   if (!fbDb || !currentUser || !currentUser.emailVerified) return;
