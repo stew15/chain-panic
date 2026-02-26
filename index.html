@@ -1361,19 +1361,30 @@ function drawHUD(){
 let splashT=0;
 function drawSplash(){
   splashT+=.016;drawBG();
-  // ── Title
-  const fs=Math.min(W*.13,72);ctx.save();const pulse=1+Math.sin(splashT*2)*.02;ctx.scale(pulse,pulse);
-  ctx.font=`bold ${fs}px 'Courier New'`;ctx.textAlign='center';ctx.fillStyle='#fff';ctx.shadowBlur=28;ctx.shadowColor='#00ffff';ctx.fillText('CHAIN',(W/2)/pulse,(H/2-120)/pulse);
-  ctx.fillStyle='#ffaa00';ctx.shadowColor='#ff5500';ctx.fillText('PANIC',(W/2)/pulse,(H/2-120+fs*1.05)/pulse);ctx.restore();
-  // ── TAP TO PLAY
-  if(Math.sin(splashT*3)>0){ctx.save();ctx.font=`bold 16px 'Courier New'`;ctx.textAlign='center';ctx.fillStyle='rgba(255,255,255,.9)';ctx.shadowBlur=10;ctx.shadowColor='#fff';ctx.fillText('▶  TAP TO PLAY',W/2,H/2+60);ctx.restore();}
+  // ── Title — big, top of screen, OG-style glow
+  const fs=Math.min(W*.20,88);
+  const pulse=1+Math.sin(splashT*2)*.015;
+  const chY=H*0.17, paY=chY+fs*1.05;
+  ctx.save();ctx.textAlign='center';ctx.scale(pulse,pulse);
+  // CHAIN — bloom layer then crisp
+  ctx.font=`bold ${fs}px 'Courier New'`;
+  ctx.fillStyle='#00ffff';ctx.shadowColor='#00ffff';
+  ctx.globalAlpha=0.45;ctx.shadowBlur=50;ctx.fillText('CHAIN',(W/2)/pulse,chY/pulse);
+  ctx.globalAlpha=1;ctx.shadowBlur=20;ctx.fillText('CHAIN',(W/2)/pulse,chY/pulse);
+  // PANIC — bloom layer then crisp
+  ctx.fillStyle='#ffaa00';ctx.shadowColor='#ff5500';
+  ctx.globalAlpha=0.45;ctx.shadowBlur=50;ctx.fillText('PANIC',(W/2)/pulse,paY/pulse);
+  ctx.globalAlpha=1;ctx.shadowBlur=20;ctx.fillText('PANIC',(W/2)/pulse,paY/pulse);
+  ctx.restore();
+  // ── TAP TO PLAY — sits between title and chain animation
+  if(Math.sin(splashT*3)>0){ctx.save();ctx.font=`bold 16px 'Courier New'`;ctx.textAlign='center';ctx.fillStyle='rgba(255,255,255,.9)';ctx.shadowBlur=10;ctx.shadowColor='#fff';ctx.fillText('▶  TAP TO PLAY',W/2,H*0.38);ctx.restore();}
   // ── LEADERBOARD button
-  const lbY=H/2+105;
+  const lbY=Math.round(H*0.73);
   ctx.save();ctx.fillStyle='rgba(0,255,255,0.1)';roundRect(ctx,W/2-95,lbY-22,190,44,12);ctx.fill();
   ctx.strokeStyle='rgba(0,255,255,0.55)';ctx.lineWidth=2;roundRect(ctx,W/2-95,lbY-22,190,44,12);ctx.stroke();
   ctx.font=`bold 15px 'Courier New'`;ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillStyle='#00ffff';ctx.shadowBlur=0;ctx.fillText('LEADERBOARD',W/2,lbY);ctx.textBaseline='alphabetic';ctx.restore();
   // ── SETTINGS button
-  const stY=H/2+160;
+  const stY=Math.round(H*0.82);
   ctx.save();ctx.fillStyle='rgba(255,255,255,0.06)';roundRect(ctx,W/2-95,stY-22,190,44,12);ctx.fill();
   ctx.strokeStyle='rgba(255,255,255,0.3)';ctx.lineWidth=2;roundRect(ctx,W/2-95,stY-22,190,44,12);ctx.stroke();
   ctx.font=`bold 15px 'Courier New'`;ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillStyle='rgba(255,255,255,0.85)';ctx.shadowBlur=0;ctx.fillText('SETTINGS',W/2,stY);ctx.textBaseline='alphabetic';ctx.restore();
@@ -1533,10 +1544,10 @@ function onStart(e){
   if(state===ST.SPLASH){
     if(t.clientY>H-50){document.getElementById('how-modal').classList.add('show');return;}
     // LEADERBOARD button zone
-    const lbY=H/2+105;
+    const lbY=Math.round(H*0.73);
     if(t.clientX>W/2-95&&t.clientX<W/2+95&&t.clientY>lbY-22&&t.clientY<lbY+22){openLeaderboard();return;}
     // SETTINGS button zone
-    const stY=H/2+160;
+    const stY=Math.round(H*0.82);
     if(t.clientX>W/2-95&&t.clientX<W/2+95&&t.clientY>stY-22&&t.clientY<stY+22){openSettings();return;}
     state=ST.PLAY;initGame();return;
   }
