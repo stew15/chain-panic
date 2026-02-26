@@ -547,7 +547,7 @@ function renderLbModal() {
     cx.font=`bold 13px 'Courier New'`; cx.textAlign='left'; cx.fillStyle=isMe?'#ffd700':'#fff'; cx.shadowBlur=isMe?8:0; cx.shadowColor='#ffd700';
     cx.fillText(`${medal||('#'+(i+1)+'  ')}${en.username||'Player'}`, rowX+8, y+20);
     cx.font=`11px 'Courier New'`; cx.fillStyle='rgba(255,255,255,0.4)'; cx.shadowBlur=0;
-    cx.fillText(`${en.flingCount} flung · combo x${en.maxCombo}`, rowX+8, y+38);
+    cx.fillText(`${en.flingCount} flung · streak x${en.maxCombo}`, rowX+8, y+38);
     cx.font=`bold 18px 'Courier New'`; cx.textAlign='right'; cx.fillStyle=isMe?'#ffd700':'#00ffff'; cx.shadowBlur=isMe?8:4; cx.shadowColor=isMe?'#ffd700':'#00ffff';
     cx.fillText(en.score, rowX+rowW-8, y+24);
   });
@@ -1112,11 +1112,11 @@ function drawLbPanel(px,py,pw,ph,elapsed){
 // ─── GAME STATE ───────────────────────────
 const ST={SPLASH:0,PLAY:1,DEAD:2,VICTORY:3,PAUSE:4};
 let state=ST.SPLASH;
-let chain,enemies,score,chainCount,flingCount,combo,maxCombo;
+let chain,enemies,score,chainCount,flingCount;
 let waveIdx,waveTimer,spawnTimer,waveLabel,waveLabelTimer;
 let bestScore=parseInt(localStorage.getItem('cp_best')||'0');
 let newRec=false,pendingRec=false,deathTimer=0,flashAlpha=0,bgT=0,lastTime=0;
-let flingMult=1,flingStreak=0,flingKillCount=0,flingNum=0; // scoring multipliers
+let flingMult=1,flingStreak=0,flingKillCount=0,flingNum=0,bestFlingStreak=0; // scoring multipliers
 
 const shareModal=document.getElementById('share-modal');
 const shareCanvas=document.getElementById('share-canvas');
@@ -1138,8 +1138,8 @@ function initGame(){
   stopActiveStream(); // clean up any lingering streams
   chain=new Chain(W/2,H/2,9,22);
   enemies=[];P=[];FT=[];
-  score=0;chainCount=0;flingCount=0;combo=0;maxCombo=0;
-  flingMult=1;flingStreak=0;flingKillCount=0;flingNum=0;
+  score=0;chainCount=0;flingCount=0;
+  flingMult=1;flingStreak=0;flingKillCount=0;flingNum=0;bestFlingStreak=0;
   waveIdx=0;waveTimer=0;spawnTimer=0;waveLabel='';waveLabelTimer=0;
   flashAlpha=0;newRec=false;pendingRec=false;deathTimer=0;
   victoryTimer=0;lbLoaded=false;lbScrollDone=false;lbScrollPos=0;lastLbTickIdx=0;
@@ -1187,10 +1187,10 @@ function checkCollisions(){
     if(d<p.sz+e.sz){
       e.hp--;spark(e.x,e.y,e.col,14,5);
       if(e.hp<=0){
-        if(flingKillCount===0)flingStreak=Math.min(flingStreak+1,9); // first kill of fling → streak up
+        if(flingKillCount===0){const ns=flingStreak+1;if(ns>bestFlingStreak)bestFlingStreak=ns;flingStreak=Math.min(ns,9);} // first kill of fling → streak up
         flingKillCount++;
-        const tm=Math.max(1,flingMult+flingStreak);const pts=Math.round(e.pts*tm);score+=pts;flingCount++;combo++;if(combo>maxCombo)maxCombo=combo;
-        const killTxt=tm>1?`${e.pts} x${tm}`:`+${pts}`;txt(e.x,e.y-22,killTxt,e.col,combo>=3?24:18);if(combo>=3){snd('combo');txt(p.x,p.y-50,`COMBO x${combo}!`,'#ff88ff',28);}e.dead=true;shake(6);if(flingCount===5)txt(W/2,H*.84,'NICE SHOT!','#ffff00',34);if(flingCount===15)txt(W/2,H*.84,'ON FIRE!!','#ff6600',40);if(flingCount===30)txt(W/2,H*.84,'UNSTOPPABLE!!!','#ff44ff',46);}
+        const tm=Math.max(1,flingMult+flingStreak);const pts=Math.round(e.pts*tm);score+=pts;flingCount++;
+        const killTxt=tm>1?`${e.pts} x${tm}`:`+${pts}`;txt(e.x,e.y-22,killTxt,e.col,18);e.dead=true;shake(6);if(flingCount===5)txt(W/2,H*.84,'NICE SHOT!','#ffff00',34);if(flingCount===15)txt(W/2,H*.84,'ON FIRE!!','#ff6600',40);if(flingCount===30)txt(W/2,H*.84,'UNSTOPPABLE!!!','#ff44ff',46);}
       const spd=Math.sqrt(p.vx*p.vx+p.vy*p.vy)||0.001;if(spd<2.5){p.vx=p.vx/spd*2.5;p.vy=p.vy/spd*2.5;}
     }
   });});
@@ -1235,7 +1235,7 @@ function die(){
   snd('death');shake(22);flashAlpha=1;spark(W/2,H/2,'#ff4400',30,7);
   const isNew=score>bestScore;
   if(isNew){bestScore=score;localStorage.setItem('cp_best',bestScore);newRec=true;}
-  submitScore(bestScore,flingCount,maxCombo); // always submit all-time best, not just current game
+  submitScore(bestScore,flingCount,bestFlingStreak); // always submit all-time best, not just current game
   captureFinalVideo(isNew?3500:2000,isNew); // victory: gameplay window + 3.5s of victory animation
   if(isNew){
     state=ST.VICTORY;victoryTimer=0;lbScrollDone=false;lbScrollPos=0;lastLbTickIdx=0;lbTab='daily';
@@ -1324,7 +1324,7 @@ function drawSplash(){
   }ctx.restore();
   // ── HOW TO PLAY
   const hp=.4+Math.sin(splashT*2.5)*.6;
-  ctx.save();ctx.globalAlpha=hp;ctx.font=`bold 15px 'Courier New'`;ctx.textAlign='center';ctx.fillStyle='rgba(0,255,255,0.85)';ctx.shadowBlur=8;ctx.shadowColor='#00ffff';ctx.fillText('❓  HOW TO PLAY',W/2,H-32);ctx.restore();
+  ctx.save();ctx.globalAlpha=hp;ctx.font=`bold 15px 'Courier New'`;ctx.textAlign='center';ctx.fillStyle='rgba(0,255,255,0.85)';ctx.shadowBlur=8;ctx.shadowColor='#00ffff';ctx.fillText('❓ HOW TO PLAY',W/2,H-32);ctx.restore();
   drawP();drawFT();
 }
 function roundRect(c,x,y,w,h,r){c.beginPath();c.moveTo(x+r,y);c.lineTo(x+w-r,y);c.arcTo(x+w,y,x+w,y+r,r);c.lineTo(x+w,y+h-r);c.arcTo(x+w,y+h,x+w-r,y+h,r);c.lineTo(x+r,y+h);c.arcTo(x,y+h,x,y+h-r,r);c.lineTo(x,y+r);c.arcTo(x,y,x+r,y,r);c.closePath();}
@@ -1341,7 +1341,7 @@ function drawDead(){
   const a=Math.min(1,(deathTimer-.4)*2.5);ctx.save();ctx.globalAlpha=a;
   const fs=Math.min(W*.135,70);ctx.font=`bold ${fs}px 'Courier New'`;ctx.textAlign='center';ctx.fillStyle='#ff2200';ctx.shadowBlur=35;ctx.shadowColor='#ff0000';ctx.fillText('GAME',W/2,H/2-55);ctx.fillText('OVER',W/2,H/2+10);
   ctx.font=`bold 26px 'Courier New'`;ctx.fillStyle='#fff';ctx.shadowColor='#00ffff';ctx.shadowBlur=12;ctx.fillText(`SCORE: ${score}`,W/2,H/2+65);
-  ctx.font=`15px 'Courier New'`;ctx.fillStyle='#ffaa00';ctx.shadowColor='#ffaa00';ctx.shadowBlur=8;ctx.fillText(`FLUNG: ${flingCount}  •  BEST COMBO: x${maxCombo}`,W/2,H/2+92);
+  ctx.font=`15px 'Courier New'`;ctx.fillStyle='#ffaa00';ctx.shadowColor='#ffaa00';ctx.shadowBlur=8;ctx.fillText(`FLUNG: ${flingCount}  •  BEST STREAK: x${bestFlingStreak}`,W/2,H/2+92);
   if(newRec){const rp=Math.round(20*(1+Math.sin(deathTimer*6)*.05));ctx.font=`bold ${rp}px 'Courier New'`;ctx.fillStyle='#ffff00';ctx.shadowColor='#ffff00';ctx.shadowBlur=22;ctx.fillText('🏆 NEW RECORD!',W/2,H/2+122);}
   const interactive=videoBlob||deathTimer>2.5;
   if(interactive){
@@ -1378,7 +1378,7 @@ function buildCard(){
   const tg=sx.createLinearGradient(0,0,sw,0);tg.addColorStop(0,'#00ffff22');tg.addColorStop(.5,'#ff000022');tg.addColorStop(1,'#ffaa0022');sx.fillStyle=tg;sx.fillRect(0,0,sw,4);
   sx.font=`bold 50px 'Courier New'`;sx.textAlign='center';sx.fillStyle='#fff';sx.shadowBlur=20;sx.shadowColor='#00ffff';sx.fillText('CHAIN',sw*.36,70);sx.fillStyle='#ffaa00';sx.shadowColor='#ff5500';sx.fillText('PANIC',sw*.65,70);
   sx.strokeStyle='rgba(0,255,255,.2)';sx.lineWidth=1;sx.beginPath();sx.moveTo(30,90);sx.lineTo(sw-30,90);sx.stroke();
-  [{l:'SCORE',v:String(score),c:'#fff',big:true},{l:'ENEMIES FLUNG',v:String(flingCount),c:'#ff88ff',big:false},{l:'BEST COMBO',v:`x${maxCombo}`,c:'#ffaa00',big:false},{l:'PERSONAL BEST',v:String(bestScore),c:'#00ffff',big:false}].forEach((s,i)=>{const x=30+(i%2)*(sw/2),y=110+Math.floor(i/2)*80;sx.textAlign='left';sx.font=`10px 'Courier New'`;sx.fillStyle='rgba(255,255,255,.4)';sx.shadowBlur=0;sx.fillText(s.l,x,y);sx.font=`bold ${s.big?40:28}px 'Courier New'`;sx.fillStyle=s.c;sx.shadowBlur=12;sx.shadowColor=s.c;sx.fillText(s.v,x,y+(s.big?42:34));});
+  [{l:'SCORE',v:String(score),c:'#fff',big:true},{l:'ENEMIES FLUNG',v:String(flingCount),c:'#ff88ff',big:false},{l:'BEST STREAK',v:`x${bestFlingStreak}`,c:'#ffaa00',big:false},{l:'PERSONAL BEST',v:String(bestScore),c:'#00ffff',big:false}].forEach((s,i)=>{const x=30+(i%2)*(sw/2),y=110+Math.floor(i/2)*80;sx.textAlign='left';sx.font=`10px 'Courier New'`;sx.fillStyle='rgba(255,255,255,.4)';sx.shadowBlur=0;sx.fillText(s.l,x,y);sx.font=`bold ${s.big?40:28}px 'Courier New'`;sx.fillStyle=s.c;sx.shadowBlur=12;sx.shadowColor=s.c;sx.fillText(s.v,x,y+(s.big?42:34));});
   sx.font=`11px 'Courier New'`;sx.textAlign='center';sx.shadowBlur=0;sx.fillStyle='rgba(0,255,255,0.55)';sx.fillText(GAME_URL,sw/2,sh-32);
   if(newRec){sx.fillStyle='rgba(255,220,0,0.13)';sx.fillRect(0,sh-52,sw,22);sx.font=`bold 13px 'Courier New'`;sx.textAlign='center';sx.fillStyle='#ffff00';sx.shadowColor='#ffee00';sx.shadowBlur=14;sx.fillText('🏆  NEW PERSONAL RECORD!',sw/2,sh-35);}
   else{sx.font=`12px 'Courier New'`;sx.textAlign='center';sx.fillStyle='rgba(0,255,255,.3)';sx.shadowBlur=0;sx.fillText('#ChainPanic',sw/2,sh-14);}
@@ -1523,11 +1523,10 @@ function onEnd(e){
         if(wasMiss)flingStreak=0;
         flingNum++;flingKillCount=0;
         flingMult=wasMiss?1:launched.length; // x1 on miss, chain-size bonus otherwise
-        combo=0;
         const tm=Math.max(1,flingMult+flingStreak);
         txt(W/2,H/2-40,`FLING! x${tm}`,'#00ffff',28);shake(10+launched.length*3);spark(chain.tip.x,chain.tip.y,'#00ffff',16,7);
       }
-    }else{combo=0;}
+    }
   }
   swipeHistory=[];
 }
