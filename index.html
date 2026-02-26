@@ -208,10 +208,16 @@ input[type=range]::-webkit-slider-thumb { -webkit-appearance:none; width:20px; h
          match /scores/{userId} {
            allow read: if true;
            allow write: if request.auth != null
-             && request.auth.uid == userId;
+             && request.auth.uid == userId
+             && request.auth.token.email_verified == true
+             && request.resource.data.score is number
+             && request.resource.data.score >= 0
+             && request.resource.data.score < 1000000
+             && request.resource.data.userId == request.auth.uid;
          }
          match /users/{userId} {
-           allow read: if request.auth != null;
+           allow read: if request.auth != null
+             && request.auth.uid == userId;
            allow write: if request.auth != null
              && request.auth.uid == userId;
          }
@@ -590,8 +596,11 @@ window.addEventListener('focus', () => {
 
 // ─── BACKGROUND MUSIC ─────────────────────
 // 8-step sequencer (8th notes at 128bpm ≈ 234ms each)
-let bgMusicTimer=null, musicBeat=0;
-const MUSIC_STEP=Math.round(60000/(128*2)); // ~234ms per 8th note
+// Uses Web Audio lookahead scheduling so timing never drifts
+let bgMusicTimer=null, musicBeat=0, nextBeatTime=0;
+const MUSIC_STEP=60/(128*2); // seconds per 8th note (~0.234s)
+const MUSIC_LOOKAHEAD=0.15;  // schedule this far ahead (seconds)
+const MUSIC_INTERVAL=50;     // scheduler poll interval (ms)
 
 // Patterns: 1=hit, 0=rest
 const MK=[1,0,0,0,1,0,0,0]; // kick   — beat 1 & 3
@@ -600,22 +609,31 @@ const MH=[1,1,1,1,1,1,1,1]; // hi-hat — every 8th note
 // Bass melody in Hz (0=rest)  — A minor pentatonic
 const MB=[55,0,55,0,73,0,65,55];
 
-function musicTick(){
-  if(!AC||state!==ST.PLAY)return;
-  if(AC.state!=='running'){AC.resume().catch(()=>{});return;}
-  const s=musicBeat%8, t=AC.currentTime;
-  // Kick — low-frequency sweep (808 style)
+function musicTick(t){
+  // t = precise Web Audio timestamp to schedule this beat at
+  const s=musicBeat%8;
   const md=musicGain||AC.destination;
   if(MK[s]){const o=AC.createOscillator(),g=AC.createGain();o.connect(g);g.connect(md);if(audioDestNode)g.connect(audioDestNode);o.type='sine';o.frequency.setValueAtTime(190,t);o.frequency.exponentialRampToValueAtTime(38,t+0.18);g.gain.setValueAtTime(0.45,t);g.gain.exponentialRampToValueAtTime(0.001,t+0.22);o.start(t);o.stop(t+0.22);}
-  // Snare — short sawtooth burst
   if(MS[s]){const o=AC.createOscillator(),g=AC.createGain();o.connect(g);g.connect(md);if(audioDestNode)g.connect(audioDestNode);o.type='sawtooth';o.frequency.value=200;g.gain.setValueAtTime(0.13,t);g.gain.exponentialRampToValueAtTime(0.001,t+0.11);o.start(t);o.stop(t+0.11);}
-  // Bass — deep sine
   if(MB[s]){const o=AC.createOscillator(),g=AC.createGain();o.connect(g);g.connect(md);if(audioDestNode)g.connect(audioDestNode);o.type='sine';o.frequency.value=MB[s];g.gain.setValueAtTime(0.28,t);g.gain.exponentialRampToValueAtTime(0.001,t+0.32);o.start(t);o.stop(t+0.32);}
-  // Hi-hat — high-frequency square (open/closed alternating)
   if(MH[s]){const v=s%2===0?0.07:0.04,d=s%2===0?0.05:0.03;const o=AC.createOscillator(),g=AC.createGain();o.connect(g);g.connect(md);if(audioDestNode)g.connect(audioDestNode);o.type='square';o.frequency.value=7200+s*200;g.gain.setValueAtTime(v,t);g.gain.exponentialRampToValueAtTime(0.001,t+d);o.start(t);o.stop(t+d);}
   musicBeat++;
 }
-function startBgMusic(){if(bgMusicTimer)return;musicBeat=0;bgMusicTimer=setInterval(musicTick,MUSIC_STEP);}
+function musicScheduler(){
+  if(!AC||state!==ST.PLAY)return;
+  if(AC.state!=='running'){AC.resume().catch(()=>{});return;}
+  while(nextBeatTime<AC.currentTime+MUSIC_LOOKAHEAD){
+    musicTick(nextBeatTime);
+    nextBeatTime+=MUSIC_STEP;
+  }
+}
+function startBgMusic(){
+  if(bgMusicTimer)return;
+  musicBeat=0;
+  nextBeatTime=AC?AC.currentTime+0.05:0;
+  bgMusicTimer=setInterval(musicScheduler,MUSIC_INTERVAL);
+  musicScheduler();
+}
 function stopBgMusic(){if(bgMusicTimer){clearInterval(bgMusicTimer);bgMusicTimer=null;}musicBeat=0;}
 
 function snd(n) {
@@ -964,8 +982,12 @@ function drawVictory(dt){
   // Share prompt + HOME after 10s
   if(t>10){
     const pulse=0.6+Math.sin(t*4)*0.4;
-    ctx.save();ctx.globalAlpha=pulse;ctx.font=`bold 18px 'Courier New'`;ctx.textAlign='center';ctx.fillStyle='#00ffff';ctx.shadowBlur=22;ctx.shadowColor='#00ffff';ctx.fillText('[ SHARE YOUR ACHIEVEMENT ]',W/2,H-36);ctx.restore();
-    ctx.save();ctx.globalAlpha=0.5;ctx.font=`12px 'Courier New'`;ctx.textAlign='center';ctx.fillStyle='rgba(255,255,255,0.5)';ctx.shadowBlur=0;ctx.fillText('⌂ HOME',W/2,H-12);ctx.restore();
+    ctx.save();ctx.globalAlpha=pulse;ctx.font=`bold 17px 'Courier New'`;ctx.textAlign='center';ctx.fillStyle='#00ffff';ctx.shadowBlur=22;ctx.shadowColor='#00ffff';ctx.fillText('[ SHARE YOUR ACHIEVEMENT ]',W/2,H-80);ctx.restore();
+    // HOME button — well above iOS bottom chrome
+    const vHomeY=H-44;ctx.save();
+    ctx.fillStyle='rgba(255,255,255,0.06)';roundRect(ctx,W/2-70,vHomeY-20,140,36,10);ctx.fill();
+    ctx.strokeStyle='rgba(255,255,255,0.25)';ctx.lineWidth=1.5;roundRect(ctx,W/2-70,vHomeY-20,140,36,10);ctx.stroke();
+    ctx.font=`bold 13px 'Courier New'`;ctx.textAlign='center';ctx.fillStyle='rgba(255,255,255,0.7)';ctx.shadowBlur=0;ctx.fillText('⌂  HOME',W/2,vHomeY+4);ctx.restore();
   }
 
 
@@ -1212,9 +1234,12 @@ function drawSplash(){
     if(i>0){const pt2=splashT*1.3+(i-1)*.38,px2=cx+Math.cos(pt2)*(55+(i-1)*7),py2=cy+Math.sin(pt2*.75)*45+(i-1)*10;ctx.beginPath();ctx.moveTo(px2,py2);ctx.lineTo(nx,ny);ctx.stroke();}
     ctx.fillStyle=i===9?'#ffdd00':'#888';ctx.shadowColor=i===9?'#ff8800':'#888';ctx.shadowBlur=i===9?14:5;ctx.beginPath();ctx.arc(nx,ny,i===9?12:3.5,0,Math.PI*2);ctx.fill();
   }ctx.restore();
-  const fs=Math.min(W*.13,72);ctx.save();const pulse=1+Math.sin(splashT*2)*.02;ctx.scale(pulse,pulse);
-  ctx.font=`bold ${fs}px 'Courier New'`;ctx.textAlign='center';ctx.fillStyle='#fff';ctx.shadowBlur=28;ctx.shadowColor='#00ffff';ctx.fillText('CHAIN',(W/2)/pulse,(H/2-120)/pulse);
-  ctx.fillStyle='#ffaa00';ctx.shadowColor='#ff5500';ctx.fillText('PANIC',(W/2)/pulse,(H/2-120+fs*1.05)/pulse);ctx.restore();
+  const fs=Math.min(W*.13,72);
+  const pulse=1+Math.sin(splashT*2)*.02;
+  const pfs=Math.round(fs*pulse); // animate font size, not canvas scale — keeps text crisp
+  ctx.save();ctx.font=`bold ${pfs}px 'Courier New'`;ctx.textAlign='center';
+  ctx.fillStyle='#fff';ctx.shadowBlur=18;ctx.shadowColor='#00ffff';ctx.fillText('CHAIN',W/2,H/2-120);
+  ctx.fillStyle='#ffaa00';ctx.shadowColor='#ff5500';ctx.fillText('PANIC',W/2,H/2-120+pfs*1.05);ctx.restore();
   // TAP TO PLAY
   if(Math.sin(splashT*3)>0){ctx.save();ctx.font=`bold 16px 'Courier New'`;ctx.textAlign='center';ctx.fillStyle='rgba(255,255,255,.9)';ctx.shadowBlur=10;ctx.shadowColor='#fff';ctx.fillText('▶  TAP TO PLAY',W/2,H/2+60);ctx.restore();}
   // LEADERBOARD button
@@ -1247,12 +1272,16 @@ function drawDead(){
   const fs=Math.min(W*.135,70);ctx.font=`bold ${fs}px 'Courier New'`;ctx.textAlign='center';ctx.fillStyle='#ff2200';ctx.shadowBlur=35;ctx.shadowColor='#ff0000';ctx.fillText('GAME',W/2,H/2-55);ctx.fillText('OVER',W/2,H/2+10);
   ctx.font=`bold 26px 'Courier New'`;ctx.fillStyle='#fff';ctx.shadowColor='#00ffff';ctx.shadowBlur=12;ctx.fillText(`SCORE: ${score}`,W/2,H/2+65);
   ctx.font=`15px 'Courier New'`;ctx.fillStyle='#ffaa00';ctx.shadowColor='#ffaa00';ctx.shadowBlur=8;ctx.fillText(`FLUNG: ${flingCount}  •  BEST COMBO: x${maxCombo}`,W/2,H/2+92);
-  if(newRec){const rp=1+Math.sin(deathTimer*6)*.05;ctx.font=`bold 20px 'Courier New'`;ctx.fillStyle='#ffff00';ctx.shadowColor='#ffff00';ctx.shadowBlur=22;ctx.save();ctx.scale(rp,rp);ctx.fillText('🏆 NEW RECORD!',(W/2)/rp,(H/2+122)/rp);ctx.restore();}
+  if(newRec){const rp=Math.round(20*(1+Math.sin(deathTimer*6)*.05));ctx.font=`bold ${rp}px 'Courier New'`;ctx.fillStyle='#ffff00';ctx.shadowColor='#ffff00';ctx.shadowBlur=22;ctx.fillText('🏆 NEW RECORD!',W/2,H/2+122);}
   const interactive=videoBlob||deathTimer>2.5;
   if(interactive){
     if(Math.sin(deathTimer*4)>0){ctx.font=`14px 'Courier New'`;ctx.fillStyle='rgba(255,255,255,.9)';ctx.shadowBlur=6;ctx.shadowColor='#fff';ctx.fillText('TAP TO RETRY',W/2,H/2+(newRec?158:140));}
     const sp=0.7+Math.sin(deathTimer*3)*0.3;ctx.save();ctx.globalAlpha=sp;ctx.font=`bold 17px 'Courier New'`;ctx.fillStyle='#00ffff';ctx.shadowColor='#00ffff';ctx.shadowBlur=18;ctx.fillText('[ SHARE YOUR SCORE ]',W/2,H/2+(newRec?186:168));ctx.restore();
-    ctx.save();ctx.globalAlpha=0.5;ctx.font=`12px 'Courier New'`;ctx.fillStyle='rgba(255,255,255,0.5)';ctx.shadowBlur=0;ctx.fillText('⌂ HOME',W/2,H-24);ctx.restore();
+    // HOME button — proper tappable button well above bottom edge
+    const homeY=H-88;ctx.save();
+    ctx.fillStyle='rgba(255,255,255,0.06)';roundRect(ctx,W/2-70,homeY-20,140,36,10);ctx.fill();
+    ctx.strokeStyle='rgba(255,255,255,0.25)';ctx.lineWidth=1.5;roundRect(ctx,W/2-70,homeY-20,140,36,10);ctx.stroke();
+    ctx.font=`bold 13px 'Courier New'`;ctx.textAlign='center';ctx.fillStyle='rgba(255,255,255,0.7)';ctx.shadowBlur=0;ctx.fillText('⌂  HOME',W/2,homeY+4);ctx.restore();
   }ctx.restore();
 }
 
@@ -1378,17 +1407,17 @@ function onStart(e){
     state=ST.PLAY;initGame();return;
   }
   if(state===ST.DEAD&&(videoBlob||deathTimer>2.5)){
-    // HOME button
-    if(t.clientY>H-40){state=ST.SPLASH;return;}
+    // HOME button (drawn at H-88, button rect H-108 to H-72)
+    if(t.clientY>H-115&&t.clientY<H-60){state=ST.SPLASH;return;}
     const shareY=H/2+(newRec?182:164);
     if(t.clientY>shareY-15&&t.clientY<shareY+25){openShareModal();return;}
     state=ST.PLAY;initGame();return;
   }
   if(state===ST.VICTORY&&victoryTimer>10){
-    // HOME button (bottom)
-    if(t.clientY>H-28){state=ST.SPLASH;return;}
-    // Share prompt
-    if(t.clientY>H-60&&t.clientY<=H-28){openShareModal();return;}
+    // HOME button (drawn at H-44, rect H-64 to H-28)
+    if(t.clientY>H-72&&t.clientY<H-24){state=ST.SPLASH;return;}
+    // Share prompt (drawn at H-80)
+    if(t.clientY>H-110&&t.clientY<=H-72){openShareModal();return;}
     if(t.clientY<H*0.25){state=ST.PLAY;initGame();return;}
     // Tab taps
     if(victoryTimer>3.5){
@@ -1435,7 +1464,7 @@ canvas.addEventListener('touchend',onEnd,{passive:false});
 canvas.addEventListener('mousedown',onStart);
 canvas.addEventListener('mousemove',onMove);
 canvas.addEventListener('mouseup',onEnd);
-document.body.addEventListener('touchmove',e=>e.preventDefault(),{passive:false});
+document.body.addEventListener('touchmove',e=>{if(e.target.tagName!=='INPUT')e.preventDefault();},{passive:false});
 
 // ─── MAIN LOOP ────────────────────────────
 function loop(ts){
