@@ -314,8 +314,9 @@ async function initAuth() {
         } catch(e) {}
       }
       if (!user.emailVerified) {
-        // Keep modal open — show resend option
-        loginBtn.classList.remove('show');
+        // Unverified: keep login button so user can always reopen the modal
+        loginBtn.classList.add('show');
+        badge.classList.remove('show');
         setAuthMsg('Email not verified — check your spam folder, or <span style="color:#00ffff;text-decoration:underline;cursor:pointer" onclick="doResendVerification()">tap here to resend</span>.', true, true);
       } else {
         badge.classList.add('show'); loginBtn.classList.remove('show');
@@ -988,15 +989,14 @@ function captureFinalVideo(stopDelay=2000,forceCurrentWindow=false){
   let built=false;
   function buildBlob(){
     if(built)return;built=true;
-    // forceCurrentWindow (victory): always use current window so gameplay+victory are both in clip
-    if(snapChunks.length>0&&(forceCurrentWindow||windowAge>=3000)){
+    // Always prefer snapChunks — it includes the death/victory screen captured during stopDelay.
+    // Fall back to prevBlob only if the current window is completely empty (e.g. MediaRecorder
+    // never started). The old windowAge guard was incorrectly dropping death-screen content.
+    if(snapChunks.length>0){
       videoBlob=new Blob(snapChunks,{type:snapMT||'video/mp4'});
       videoURL=URL.createObjectURL(videoBlob);
     }else if(snapPrev){
       videoBlob=snapPrev;
-      videoURL=URL.createObjectURL(videoBlob);
-    }else if(snapChunks.length>0){
-      videoBlob=new Blob(snapChunks,{type:snapMT||'video/mp4'});
       videoURL=URL.createObjectURL(videoBlob);
     }
   }
@@ -1296,6 +1296,23 @@ function drawHUD(){
 let splashT=0;
 function drawSplash(){
   splashT+=.016;drawBG();
+  // ── Title
+  const fs=Math.min(W*.13,72);ctx.save();const pulse=1+Math.sin(splashT*2)*.02;ctx.scale(pulse,pulse);
+  ctx.font=`bold ${fs}px 'Courier New'`;ctx.textAlign='center';ctx.fillStyle='#fff';ctx.shadowBlur=28;ctx.shadowColor='#00ffff';ctx.fillText('CHAIN',(W/2)/pulse,(H/2-120)/pulse);
+  ctx.fillStyle='#ffaa00';ctx.shadowColor='#ff5500';ctx.fillText('PANIC',(W/2)/pulse,(H/2-120+fs*1.05)/pulse);ctx.restore();
+  // ── TAP TO PLAY
+  if(Math.sin(splashT*3)>0){ctx.save();ctx.font=`bold 16px 'Courier New'`;ctx.textAlign='center';ctx.fillStyle='rgba(255,255,255,.9)';ctx.shadowBlur=10;ctx.shadowColor='#fff';ctx.fillText('▶  TAP TO PLAY',W/2,H/2+60);ctx.restore();}
+  // ── LEADERBOARD button
+  const lbY=H/2+105;
+  ctx.save();ctx.fillStyle='rgba(0,255,255,0.1)';roundRect(ctx,W/2-95,lbY-22,190,44,12);ctx.fill();
+  ctx.strokeStyle='rgba(0,255,255,0.55)';ctx.lineWidth=2;roundRect(ctx,W/2-95,lbY-22,190,44,12);ctx.stroke();
+  ctx.font=`bold 15px 'Courier New'`;ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillStyle='#00ffff';ctx.shadowBlur=0;ctx.fillText('LEADERBOARD',W/2,lbY);ctx.textBaseline='alphabetic';ctx.restore();
+  // ── SETTINGS button
+  const stY=H/2+160;
+  ctx.save();ctx.fillStyle='rgba(255,255,255,0.06)';roundRect(ctx,W/2-95,stY-22,190,44,12);ctx.fill();
+  ctx.strokeStyle='rgba(255,255,255,0.3)';ctx.lineWidth=2;roundRect(ctx,W/2-95,stY-22,190,44,12);ctx.stroke();
+  ctx.font=`bold 15px 'Courier New'`;ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillStyle='rgba(255,255,255,0.85)';ctx.shadowBlur=0;ctx.fillText('SETTINGS',W/2,stY);ctx.textBaseline='alphabetic';ctx.restore();
+  // ── Chain animation — drawn LAST so it floats above buttons (no tap zone impact)
   ctx.save();const cx=W/2,cy=H/2-10;
   for(let i=0;i<10;i++){
     const t=splashT*1.3+i*.38,nx=cx+Math.cos(t)*(55+i*7),ny=cy+Math.sin(t*.75)*45+i*10;
@@ -1303,24 +1320,9 @@ function drawSplash(){
     if(i>0){const pt2=splashT*1.3+(i-1)*.38,px2=cx+Math.cos(pt2)*(55+(i-1)*7),py2=cy+Math.sin(pt2*.75)*45+(i-1)*10;ctx.beginPath();ctx.moveTo(px2,py2);ctx.lineTo(nx,ny);ctx.stroke();}
     ctx.fillStyle=i===9?'#ffdd00':'#888';ctx.shadowColor=i===9?'#ff8800':'#888';ctx.shadowBlur=i===9?14:5;ctx.beginPath();ctx.arc(nx,ny,i===9?12:3.5,0,Math.PI*2);ctx.fill();
   }ctx.restore();
-  const fs=Math.min(W*.13,72);ctx.save();const pulse=1+Math.sin(splashT*2)*.02;ctx.scale(pulse,pulse);
-  ctx.font=`bold ${fs}px 'Courier New'`;ctx.textAlign='center';ctx.fillStyle='#fff';ctx.shadowBlur=28;ctx.shadowColor='#00ffff';ctx.fillText('CHAIN',(W/2)/pulse,(H/2-120)/pulse);
-  ctx.fillStyle='#ffaa00';ctx.shadowColor='#ff5500';ctx.fillText('PANIC',(W/2)/pulse,(H/2-120+fs*1.05)/pulse);ctx.restore();
-  // TAP TO PLAY
-  if(Math.sin(splashT*3)>0){ctx.save();ctx.font=`bold 16px 'Courier New'`;ctx.textAlign='center';ctx.fillStyle='rgba(255,255,255,.9)';ctx.shadowBlur=10;ctx.shadowColor='#fff';ctx.fillText('▶  TAP TO PLAY',W/2,H/2+60);ctx.restore();}
-  // LEADERBOARD button
-  const lbY=H/2+105;
-  ctx.save();ctx.fillStyle='rgba(0,255,255,0.1)';roundRect(ctx,W/2-95,lbY-22,190,44,12);ctx.fill();
-  ctx.strokeStyle='rgba(0,255,255,0.55)';ctx.lineWidth=2;roundRect(ctx,W/2-95,lbY-22,190,44,12);ctx.stroke();
-  ctx.font=`bold 15px 'Courier New'`;ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillStyle='#00ffff';ctx.shadowBlur=0;ctx.fillText('LEADERBOARD',W/2,lbY);ctx.textBaseline='alphabetic';ctx.restore();
-  // SETTINGS button
-  const stY=H/2+160;
-  ctx.save();ctx.fillStyle='rgba(255,255,255,0.06)';roundRect(ctx,W/2-95,stY-22,190,44,12);ctx.fill();
-  ctx.strokeStyle='rgba(255,255,255,0.3)';ctx.lineWidth=2;roundRect(ctx,W/2-95,stY-22,190,44,12);ctx.stroke();
-  ctx.font=`bold 15px 'Courier New'`;ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillStyle='rgba(255,255,255,0.85)';ctx.shadowBlur=0;ctx.fillText('SETTINGS',W/2,stY);ctx.textBaseline='alphabetic';ctx.restore();
-  // HOW TO PLAY
+  // ── HOW TO PLAY
   const hp=.4+Math.sin(splashT*2.5)*.6;
-  ctx.save();ctx.globalAlpha=hp;ctx.font=`11px 'Courier New'`;ctx.textAlign='center';ctx.fillStyle='rgba(0,255,255,0.7)';ctx.shadowBlur=6;ctx.shadowColor='#00ffff';ctx.fillText('❓ HOW TO PLAY',W/2,H-28);ctx.restore();
+  ctx.save();ctx.globalAlpha=hp;ctx.font=`bold 15px 'Courier New'`;ctx.textAlign='center';ctx.fillStyle='rgba(0,255,255,0.85)';ctx.shadowBlur=8;ctx.shadowColor='#00ffff';ctx.fillText('❓  HOW TO PLAY',W/2,H-32);ctx.restore();
   drawP();drawFT();
 }
 function roundRect(c,x,y,w,h,r){c.beginPath();c.moveTo(x+r,y);c.lineTo(x+w-r,y);c.arcTo(x+w,y,x+w,y+r,r);c.lineTo(x+w,y+h-r);c.arcTo(x+w,y+h,x+w-r,y+h,r);c.lineTo(x+r,y+h);c.arcTo(x,y+h,x,y+h-r,r);c.lineTo(x,y+r);c.arcTo(x,y,x+r,y,r);c.closePath();}
