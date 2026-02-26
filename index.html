@@ -1364,7 +1364,7 @@ function drawSplash(){
   // ── Title — big, top of screen, OG-style glow
   const fs=Math.min(W*.20,88);
   const pulse=1+Math.sin(splashT*2)*.015;
-  const chY=H*0.17, paY=chY+fs*1.05;
+  const chY=H*0.24, paY=chY+fs*1.05;
   ctx.save();ctx.textAlign='center';ctx.scale(pulse,pulse);
   // CHAIN — bloom layer then crisp
   ctx.font=`bold ${fs}px 'Courier New'`;
@@ -1377,7 +1377,7 @@ function drawSplash(){
   ctx.globalAlpha=1;ctx.shadowBlur=20;ctx.fillText('PANIC',(W/2)/pulse,paY/pulse);
   ctx.restore();
   // ── TAP TO PLAY — sits between title and chain animation
-  if(Math.sin(splashT*3)>0){ctx.save();ctx.font=`bold 16px 'Courier New'`;ctx.textAlign='center';ctx.fillStyle='rgba(255,255,255,.9)';ctx.shadowBlur=10;ctx.shadowColor='#fff';ctx.fillText('▶  TAP TO PLAY',W/2,H*0.38);ctx.restore();}
+  if(Math.sin(splashT*3)>0){ctx.save();ctx.font=`bold 16px 'Courier New'`;ctx.textAlign='center';ctx.fillStyle='rgba(255,255,255,.9)';ctx.shadowBlur=10;ctx.shadowColor='#fff';ctx.fillText('▶  TAP TO PLAY',W/2,H*0.45);ctx.restore();}
   // ── LEADERBOARD button
   const lbY=Math.round(H*0.73);
   ctx.save();ctx.fillStyle='rgba(0,255,255,0.1)';roundRect(ctx,W/2-95,lbY-22,190,44,12);ctx.fill();
