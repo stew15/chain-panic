@@ -57,6 +57,45 @@ canvas { display:block; position:fixed; top:0; left:0; }
 #btn-sn.loading { cursor:not-allowed; color:rgba(0,255,255,0.45); border-color:rgba(0,255,255,0.3); }
 #btn-sn.loading::before { animation:fillup 9s linear forwards; }
 @keyframes fillup { from { width:0; } to { width:100%; } }
+
+/* ── Auth form ── */
+.auth-form { display:flex; flex-direction:column; gap:10px; width:280px; }
+.auth-inp { background:rgba(0,255,255,0.05); border:1px solid rgba(0,255,255,0.25); color:#fff; padding:11px 14px; border-radius:8px; font-size:13px; font-family:'Courier New',monospace; letter-spacing:1px; outline:none; }
+.auth-inp:focus { border-color:rgba(0,255,255,0.7); box-shadow:0 0 10px rgba(0,255,255,0.15); }
+.auth-inp::placeholder { color:rgba(255,255,255,0.25); }
+.auth-tabs { display:flex; width:280px; margin-bottom:4px; }
+.auth-tab { flex:1; padding:10px; background:transparent; border:1px solid rgba(0,255,255,0.2); color:rgba(255,255,255,0.35); font-family:'Courier New',monospace; font-size:11px; letter-spacing:2px; cursor:pointer; }
+.auth-tab:first-child { border-radius:8px 0 0 8px; }
+.auth-tab:last-child { border-radius:0 8px 8px 0; }
+.auth-tab.active { background:rgba(0,255,255,0.12); color:#00ffff; border-color:rgba(0,255,255,0.5); text-shadow:0 0 8px #00ffff; }
+.auth-btn { background:rgba(0,255,255,0.12); color:#00ffff; border:1.5px solid rgba(0,255,255,0.55); padding:12px; border-radius:8px; font-family:'Courier New',monospace; font-size:12px; font-weight:bold; letter-spacing:2px; cursor:pointer; text-shadow:0 0 8px #00ffff; margin-top:4px; }
+.auth-btn:active { background:rgba(0,255,255,0.25); }
+.auth-msg { font-size:11px; letter-spacing:0.5px; text-align:center; min-height:16px; line-height:1.5; max-width:280px; }
+.auth-msg.err { color:#ff5555; }
+.auth-msg.ok  { color:#00ff88; }
+.auth-link { background:transparent; border:none; color:rgba(255,255,255,0.3); font-size:10px; font-family:'Courier New',monospace; cursor:pointer; letter-spacing:1px; text-decoration:underline; }
+
+/* ── Settings modal ── */
+#settings-modal { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.96); z-index:200; align-items:center; justify-content:center; flex-direction:column; gap:0; }
+#settings-modal.show { display:flex; }
+.settings-box { background:#07070e; border:1px solid rgba(0,255,255,0.35); border-radius:16px; padding:26px 26px 20px; width:300px; display:flex; flex-direction:column; gap:22px; }
+.settings-title { color:#00ffff; text-shadow:0 0 12px #00ffff; letter-spacing:3px; font-size:14px; text-align:center; }
+.settings-row { display:flex; flex-direction:column; gap:8px; }
+.settings-lbl { font-size:10px; color:rgba(255,255,255,0.45); letter-spacing:2px; display:flex; justify-content:space-between; }
+.settings-lbl span { color:#00ffff; }
+input[type=range] { -webkit-appearance:none; width:100%; height:4px; border-radius:2px; background:rgba(0,255,255,0.15); outline:none; cursor:pointer; }
+input[type=range]::-webkit-slider-thumb { -webkit-appearance:none; width:20px; height:20px; border-radius:50%; background:#00ffff; box-shadow:0 0 8px #00ffff; cursor:pointer; }
+.settings-section { display:flex; flex-direction:column; gap:6px; border-top:1px solid rgba(255,255,255,0.06); padding-top:16px; }
+.settings-user { font-size:11px; color:rgba(255,255,255,0.5); letter-spacing:1px; text-align:center; }
+.settings-user b { color:#fff; }
+#btn-signout { background:transparent; color:rgba(255,80,80,0.7); border:1px solid rgba(255,80,80,0.3); padding:9px; border-radius:8px; font-family:'Courier New',monospace; font-size:10px; letter-spacing:2px; cursor:pointer; width:100%; }
+#btn-settings-close { background:rgba(0,255,255,0.1); color:#00ffff; border:1.5px solid rgba(0,255,255,0.5); padding:11px; border-radius:30px; font-family:'Courier New',monospace; font-size:12px; font-weight:bold; letter-spacing:2px; cursor:pointer; width:100%; }
+
+/* ── Leaderboard modal ── */
+#lb-modal { display:none; position:fixed; inset:0; background:rgba(3,3,18,0.99); z-index:200; flex-direction:column; align-items:center; }
+#lb-modal.show { display:flex; }
+#lb-canvas { width:100%; flex:1; display:block; }
+#btn-lb-close { position:fixed; bottom:20px; left:50%; transform:translateX(-50%); background:rgba(0,255,255,0.1); color:#00ffff; border:1.5px solid rgba(0,255,255,0.5); padding:11px 32px; border-radius:30px; font-family:'Courier New',monospace; font-size:12px; font-weight:bold; letter-spacing:2px; cursor:pointer; z-index:201; }
 </style>
 </head>
 <body>
@@ -78,12 +117,48 @@ canvas { display:block; position:fixed; top:0; left:0; }
 
 <div id="auth-modal">
   <div class="auth-title">JOIN THE BOARD</div>
-  <div class="auth-sub">Login to post your score to the global leaderboard</div>
-  <button id="btn-google">
-    <svg width="18" height="18" viewBox="0 0 48 48"><path fill="#4285F4" d="M44.5 20H24v8.5h11.8C34.7 33.9 29.8 37 24 37c-7.2 0-13-5.8-13-13s5.8-13 13-13c3.1 0 5.9 1.1 8.1 2.9l6.4-6.4C34.6 4.1 29.6 2 24 2 11.8 2 2 11.8 2 24s9.8 22 22 22c11 0 21-8 21-22 0-1.3-.2-2.7-.5-4z"/><path fill="#34A853" d="M6.3 14.7l7 5.1C15 16.1 19.1 13 24 13c3.1 0 5.9 1.1 8.1 2.9l6.4-6.4C34.6 4.1 29.6 2 24 2 16.3 2 9.6 7.4 6.3 14.7z"/><path fill="#FBBC05" d="M24 46c5.5 0 10.5-1.9 14.4-5l-6.6-5.4C29.8 37 27 38 24 38c-5.7 0-10.6-3.9-12.3-9.2l-7 5.4C8.1 41.5 15.5 46 24 46z"/><path fill="#EA4335" d="M44.5 20H24v8.5h11.8c-.8 2.4-2.3 4.4-4.3 5.8l6.6 5.4c3.9-3.6 6.4-8.9 6.4-15.2 0-1.3-.2-2.7-.5-4z"/></svg>
-    Continue with Google
-  </button>
+  <div class="auth-tabs">
+    <button class="auth-tab active" id="tab-login">LOG IN</button>
+    <button class="auth-tab" id="tab-signup">SIGN UP</button>
+  </div>
+  <div class="auth-form" id="form-login">
+    <input class="auth-inp" id="inp-email" type="email" placeholder="EMAIL" autocomplete="email">
+    <input class="auth-inp" id="inp-pass" type="password" placeholder="PASSWORD" autocomplete="current-password">
+    <button class="auth-btn" id="btn-do-login">LOG IN</button>
+    <button class="auth-link" id="btn-forgot">Forgot password?</button>
+  </div>
+  <div class="auth-form" id="form-signup" style="display:none">
+    <input class="auth-inp" id="inp-su-name" type="text" placeholder="USERNAME (shown on leaderboard)" maxlength="18" autocomplete="off">
+    <input class="auth-inp" id="inp-su-email" type="email" placeholder="EMAIL" autocomplete="email">
+    <input class="auth-inp" id="inp-su-pass" type="password" placeholder="PASSWORD (min 6 chars)" autocomplete="new-password">
+    <button class="auth-btn" id="btn-do-signup">CREATE ACCOUNT</button>
+  </div>
+  <div class="auth-msg" id="auth-msg"></div>
   <button class="sbtn" id="btn-auth-close">Maybe Later</button>
+</div>
+
+<div id="settings-modal">
+  <div class="settings-box">
+    <div class="settings-title">⚙ SETTINGS</div>
+    <div class="settings-row">
+      <div class="settings-lbl">MUSIC VOLUME <span id="lbl-music">60%</span></div>
+      <input type="range" id="sl-music" min="0" max="1" step="0.01" value="0.6">
+    </div>
+    <div class="settings-row">
+      <div class="settings-lbl">SFX VOLUME <span id="lbl-sfx">80%</span></div>
+      <input type="range" id="sl-sfx" min="0" max="1" step="0.01" value="0.8">
+    </div>
+    <div class="settings-section" id="settings-user-section">
+      <div class="settings-user" id="settings-user-info"></div>
+      <button id="btn-signout">SIGN OUT</button>
+    </div>
+    <button id="btn-settings-close">CLOSE</button>
+  </div>
+</div>
+
+<div id="lb-modal">
+  <canvas id="lb-canvas"></canvas>
+  <button id="btn-lb-close">CLOSE</button>
 </div>
 
 <div id="how-modal">
@@ -97,13 +172,13 @@ canvas { display:block; position:fixed; top:0; left:0; }
     <div class="how-row"><span class="how-icon">✖️</span><div class="how-text"><b>MULTIPLIER</b> (bottom-right) = chain size + fling streak. Score on every kill shows as <b>pts × mult</b>. Never miss a fling to keep it growing!</div></div>
     <div class="how-row"><span class="how-icon">🌡️</span><div class="how-text"><b>HEAT</b> builds while carrying enemies and spinning fast. Go red and your chain <b>SNAPS</b> — you lose all chained enemies. Let it cool by slowing down.</div></div>
     <div class="how-row"><span class="how-icon">💣</span><div class="how-text"><b>BOMBS</b> (orange octagon) have a 2.5s fuse ring. Fling them before it closes! Free bombs explode with a blast radius — touching either ball = game over.</div></div>
-    <div class="how-row"><span class="how-icon">⚠️</span><div class="how-text">Later waves add <b>Dodgers</b> (evade your ball), <b>Tanks</b> (2 hits), and <b>Splitters</b> (split on death). Stay unpredictable!</div></div>
+    <div class="how-row"><span class="how-icon">⚠️</span><div class="how-text">Later waves add <b>Dodgers</b> (evade your ball), <b>Tanks</b> (move in bursts, accelerate over time), and <b>Splitters</b> (split on death). Stay unpredictable!</div></div>
     </div>
     <button id="btn-how-close">LET'S GO!</button>
   </div>
 </div>
 
-<div id="user-badge"><img id="user-avatar" src="" alt=""><span id="user-name"></span></div>
+<div id="user-badge"><span id="user-name"></span></div>
 <button id="btn-login">⚡ LOGIN</button>
 <button id="btn-pause">PAUSE</button>
 
@@ -130,10 +205,15 @@ canvas { display:block; position:fixed; top:0; left:0; }
      rules_version = '2';
      service cloud.firestore {
        match /databases/{database}/documents {
-         match /scores/{doc} {
+         match /scores/{userId} {
            allow read: if true;
-           allow create: if request.auth != null
-             && request.resource.data.userId == request.auth.uid;
+           allow write: if request.auth != null
+             && request.auth.uid == userId;
+         }
+         match /users/{userId} {
+           allow read: if request.auth != null;
+           allow write: if request.auth != null
+             && request.auth.uid == userId;
          }
        }
      }
@@ -151,20 +231,21 @@ canvas { display:block; position:fixed; top:0; left:0; }
 */
 
 // ─── CONFIG ──────────────────────────────
-const GAME_URL = 'https://chain-panic.netlify.app';
+const GAME_URL = 'https://chain-panic.pages.dev';
 
 const FIREBASE_CONFIG = {
-  apiKey:            'YOUR_API_KEY',
-  authDomain:        'YOUR_PROJECT_ID.firebaseapp.com',
-  projectId:         'YOUR_PROJECT_ID',
-  storageBucket:     'YOUR_PROJECT_ID.appspot.com',
-  messagingSenderId: 'YOUR_SENDER_ID',
-  appId:             'YOUR_APP_ID'
+  apiKey:            'AIzaSyCSyIDlZ67RDwlbv3qarLeFom3fCnb7F1A',
+  authDomain:        'chain-panic.firebaseapp.com',
+  projectId:         'chain-panic',
+  storageBucket:     'chain-panic.firebasestorage.app',
+  messagingSenderId: '432465030755',
+  appId:             '1:432465030755:web:f97bfd49db3713c3705256'
 };
 const FB_READY = FIREBASE_CONFIG.apiKey !== 'YOUR_API_KEY';
 
 // ─── FIREBASE INIT ───────────────────────
 let fbAuth = null, fbDb = null, currentUser = null;
+let currentUsername = localStorage.getItem('cp_username') || '';
 if (FB_READY) {
   try {
     firebase.initializeApp(FIREBASE_CONFIG);
@@ -173,59 +254,260 @@ if (FB_READY) {
   } catch(e) { console.warn('Firebase init failed', e); }
 }
 
+// ─── PROFANITY FILTER ────────────────────
+const BAD_WORDS = ['fuck','shit','cunt','ass','bitch','dick','cock','pussy','nigger','nigga','faggot','fag','retard','whore','slut','bastard','twat','prick','wanker','arsehole','asshole','bollocks','crap','damn','piss','tit','anus'];
+function containsProfanity(str) {
+  const s = str.toLowerCase().replace(/[^a-z0-9]/g,'');
+  return BAD_WORDS.some(w => s.includes(w));
+}
+function validateUsername(name) {
+  if (!name || name.trim().length < 2) return 'Username must be at least 2 characters';
+  if (name.trim().length > 18) return 'Username must be 18 characters or less';
+  if (!/^[a-zA-Z0-9_\-. ]+$/.test(name)) return 'Letters, numbers, spaces, _ - . only';
+  if (containsProfanity(name)) return 'That username isn\'t allowed';
+  return null;
+}
+
+// ─── VOLUME ──────────────────────────────
+let musicVol = parseFloat(localStorage.getItem('cp_music') ?? 0.6);
+let sfxVol   = parseFloat(localStorage.getItem('cp_sfx')   ?? 0.8);
+
 function getWeekKey(d) {
   const jan1 = new Date(d.getFullYear(), 0, 1);
   const wk = Math.ceil(((d - jan1) / 86400000 + jan1.getDay() + 1) / 7);
   return `${d.getFullYear()}-W${String(wk).padStart(2,'0')}`;
 }
 
+function setAuthMsg(msg, isErr) {
+  const el = document.getElementById('auth-msg');
+  el.textContent = msg;
+  el.className = 'auth-msg ' + (isErr ? 'err' : 'ok');
+}
+
 async function initAuth() {
   if (!fbAuth) { if (FB_READY) document.getElementById('btn-login').classList.add('show'); return; }
-  fbAuth.onAuthStateChanged(user => {
+  fbAuth.onAuthStateChanged(async user => {
     currentUser = user;
     const badge = document.getElementById('user-badge');
     const loginBtn = document.getElementById('btn-login');
     if (user) {
+      // Load username from Firestore
+      if (fbDb) {
+        try {
+          const doc = await fbDb.collection('users').doc(user.uid).get();
+          if (doc.exists) { currentUsername = doc.data().username || ''; localStorage.setItem('cp_username', currentUsername); }
+        } catch(e) {}
+      }
       badge.classList.add('show'); loginBtn.classList.remove('show');
-      document.getElementById('user-avatar').src = user.photoURL || '';
-      document.getElementById('user-name').textContent = (user.displayName || user.email || 'Player').split(' ')[0].toUpperCase();
+      document.getElementById('user-name').textContent = (currentUsername || user.email.split('@')[0]).toUpperCase();
       document.getElementById('auth-modal').classList.remove('show');
+      updateSettingsUser();
     } else {
+      currentUsername = '';
       badge.classList.remove('show');
       if (FB_READY) loginBtn.classList.add('show');
+      updateSettingsUser();
     }
   });
 }
 
-async function loginWithGoogle() {
-  if (!fbAuth) return;
-  try { await fbAuth.signInWithPopup(new firebase.auth.GoogleAuthProvider()); }
-  catch(e) { console.warn('Login failed', e); }
+async function doLogin() {
+  const email = document.getElementById('inp-email').value.trim();
+  const pass  = document.getElementById('inp-pass').value;
+  if (!email || !pass) { setAuthMsg('Please fill in all fields', true); return; }
+  try {
+    setAuthMsg('Logging in…', false);
+    await fbAuth.signInWithEmailAndPassword(email, pass);
+    setAuthMsg('', false);
+  } catch(e) {
+    setAuthMsg(e.code === 'auth/wrong-password' || e.code === 'auth/user-not-found' ? 'Invalid email or password' : e.message, true);
+  }
 }
+
+async function doSignup() {
+  const name  = document.getElementById('inp-su-name').value.trim();
+  const email = document.getElementById('inp-su-email').value.trim();
+  const pass  = document.getElementById('inp-su-pass').value;
+  const nameErr = validateUsername(name);
+  if (nameErr) { setAuthMsg(nameErr, true); return; }
+  if (!email) { setAuthMsg('Please enter your email', true); return; }
+  if (pass.length < 6) { setAuthMsg('Password must be at least 6 characters', true); return; }
+  try {
+    setAuthMsg('Creating account…', false);
+    const cred = await fbAuth.createUserWithEmailAndPassword(email, pass);
+    // Save username to Firestore
+    if (fbDb) await fbDb.collection('users').doc(cred.user.uid).set({ username: name, email });
+    currentUsername = name; localStorage.setItem('cp_username', name);
+    await cred.user.sendEmailVerification();
+    setAuthMsg('Account created! Check your email to verify before your scores appear on the leaderboard.', false);
+  } catch(e) {
+    setAuthMsg(e.code === 'auth/email-already-in-use' ? 'Email already in use' : e.message, true);
+  }
+}
+
+async function doForgotPassword() {
+  const email = document.getElementById('inp-email').value.trim();
+  if (!email) { setAuthMsg('Enter your email above first', true); return; }
+  try {
+    await fbAuth.sendPasswordResetEmail(email);
+    setAuthMsg('Reset email sent! Check your inbox.', false);
+  } catch(e) { setAuthMsg('Could not send reset email', true); }
+}
+
 async function logout() {
   if (!fbAuth) return;
   await fbAuth.signOut();
+  currentUsername = ''; localStorage.removeItem('cp_username');
 }
 
-document.getElementById('btn-google').addEventListener('click', loginWithGoogle);
+// Auth modal tab switching
+document.getElementById('tab-login').addEventListener('click', () => {
+  document.getElementById('form-login').style.display = '';
+  document.getElementById('form-signup').style.display = 'none';
+  document.getElementById('tab-login').classList.add('active');
+  document.getElementById('tab-signup').classList.remove('active');
+  setAuthMsg('', false);
+});
+document.getElementById('tab-signup').addEventListener('click', () => {
+  document.getElementById('form-signup').style.display = '';
+  document.getElementById('form-login').style.display = 'none';
+  document.getElementById('tab-signup').classList.add('active');
+  document.getElementById('tab-login').classList.remove('active');
+  setAuthMsg('', false);
+});
+document.getElementById('btn-do-login').addEventListener('click', doLogin);
+document.getElementById('btn-do-signup').addEventListener('click', doSignup);
+document.getElementById('btn-forgot').addEventListener('click', doForgotPassword);
 document.getElementById('btn-auth-close').addEventListener('click', () => document.getElementById('auth-modal').classList.remove('show'));
-document.getElementById('user-badge').addEventListener('click', () => { if(confirm('Sign out?')) logout(); });
+document.getElementById('user-badge').addEventListener('click', () => openSettings());
 document.getElementById('btn-login').addEventListener('click', () => document.getElementById('auth-modal').classList.add('show'));
 document.getElementById('btn-how-close').addEventListener('click', () => document.getElementById('how-modal').classList.remove('show'));
 
+// ─── SETTINGS MODAL ──────────────────────
+function updateSettingsUser() {
+  const sec = document.getElementById('settings-user-section');
+  const info = document.getElementById('settings-user-info');
+  if (currentUser) {
+    sec.style.display = '';
+    info.innerHTML = `Signed in as <b>${currentUsername || currentUser.email}</b>${currentUser.emailVerified ? '' : ' <span style="color:#ffaa00">(unverified)</span>'}`;
+  } else { sec.style.display = 'none'; }
+}
+function openSettings() {
+  const sm = document.getElementById('sl-music');
+  const ss = document.getElementById('sl-sfx');
+  sm.value = musicVol; document.getElementById('lbl-music').textContent = Math.round(musicVol*100)+'%';
+  ss.value = sfxVol;   document.getElementById('lbl-sfx').textContent   = Math.round(sfxVol*100)+'%';
+  updateSettingsUser();
+  document.getElementById('settings-modal').classList.add('show');
+}
+document.getElementById('sl-music').addEventListener('input', e => {
+  musicVol = parseFloat(e.target.value);
+  if (musicGain) musicGain.gain.value = musicVol;
+  localStorage.setItem('cp_music', musicVol);
+  document.getElementById('lbl-music').textContent = Math.round(musicVol*100)+'%';
+});
+document.getElementById('sl-sfx').addEventListener('input', e => {
+  sfxVol = parseFloat(e.target.value);
+  localStorage.setItem('cp_sfx', sfxVol);
+  document.getElementById('lbl-sfx').textContent = Math.round(sfxVol*100)+'%';
+});
+document.getElementById('btn-signout').addEventListener('click', () => {
+  logout();
+  document.getElementById('settings-modal').classList.remove('show');
+});
+document.getElementById('btn-settings-close').addEventListener('click', () => document.getElementById('settings-modal').classList.remove('show'));
+
+// ─── LEADERBOARD MODAL ───────────────────
+let lbModalData = null, lbModalTab = 'daily', lbModalLoading = false;
+let lbRaf = null;
+
+function openLeaderboard() {
+  if (!currentUser) { document.getElementById('auth-modal').classList.add('show'); return; }
+  const modal = document.getElementById('lb-modal');
+  const cv = document.getElementById('lb-canvas');
+  modal.classList.add('show');
+  cv.width = window.innerWidth * (window.devicePixelRatio||1);
+  cv.height = (window.innerHeight - 60) * (window.devicePixelRatio||1);
+  cv.style.width = window.innerWidth + 'px';
+  cv.style.height = (window.innerHeight - 60) + 'px';
+  lbModalTab = 'daily'; lbModalData = null; lbModalLoading = true;
+  fetchLeaderboard().then(d => { lbModalData = d; lbModalLoading = false; renderLbModal(); });
+  renderLbModal();
+}
+function renderLbModal() {
+  const cv = document.getElementById('lb-canvas');
+  if (!cv || !document.getElementById('lb-modal').classList.contains('show')) return;
+  const cx = cv.getContext('2d');
+  const dpr = window.devicePixelRatio||1;
+  const W2 = cv.width/dpr, H2 = cv.height/dpr;
+  cx.save(); cx.scale(dpr,dpr);
+  cx.fillStyle='#07070e'; cx.fillRect(0,0,W2,H2);
+  cx.font=`bold 14px 'Courier New'`; cx.textAlign='center'; cx.fillStyle='#ffd700'; cx.shadowBlur=12; cx.shadowColor='#ffd700';
+  cx.fillText('🏆  LEADERBOARD', W2/2, 32);
+  const tabs=['daily','weekly','allTime'], labels=['TODAY','WEEK','ALL TIME'];
+  const tw=Math.min(320,W2-40)/3, tx0=(W2-tw*3)/2;
+  tabs.forEach((tab,i)=>{
+    const x=tx0+i*tw, active=tab===lbModalTab;
+    cx.fillStyle=active?'rgba(0,255,255,0.14)':'rgba(255,255,255,0.03)'; cx.fillRect(x,44,tw,24);
+    cx.strokeStyle=active?'rgba(0,255,255,0.5)':'rgba(255,255,255,0.08)'; cx.lineWidth=1; cx.strokeRect(x,44,tw,24);
+    cx.font=`${active?'bold ':''}10px 'Courier New'`; cx.fillStyle=active?'#00ffff':'rgba(255,255,255,0.35)';
+    cx.shadowBlur=active?5:0; cx.shadowColor='#00ffff'; cx.fillText(labels[i], x+tw/2, 60);
+  });
+  if (lbModalLoading) {
+    cx.font=`12px 'Courier New'`; cx.textAlign='center'; cx.fillStyle='rgba(0,255,255,0.4)'; cx.shadowBlur=0;
+    cx.fillText('LOADING...', W2/2, H2/2); cx.restore(); return;
+  }
+  const list = lbModalData ? lbModalData[lbModalTab] : [];
+  if (!list.length) {
+    cx.font=`12px 'Courier New'`; cx.textAlign='center'; cx.fillStyle='rgba(255,255,255,0.3)'; cx.shadowBlur=0;
+    cx.fillText('NO SCORES YET', W2/2, H2/2); cx.restore(); return;
+  }
+  const rowH=52, rowTop=80, rowW=Math.min(380,W2-32), rowX=(W2-rowW)/2;
+  const maxRows=Math.floor((H2-rowTop)/rowH);
+  list.slice(0,maxRows).forEach((en,i)=>{
+    const y=rowTop+i*rowH, isMe=currentUser&&en.userId===currentUser.uid;
+    cx.fillStyle=isMe?'rgba(255,215,0,0.1)':i<3?['rgba(255,215,0,0.05)','rgba(200,200,200,0.03)','rgba(180,100,30,0.03)'][i]:'transparent';
+    cx.fillRect(rowX,y,rowW,rowH-2);
+    const medal=i===0?'🥇':i===1?'🥈':i===2?'🥉':null;
+    cx.font=`bold 13px 'Courier New'`; cx.textAlign='left'; cx.fillStyle=isMe?'#ffd700':'#fff'; cx.shadowBlur=isMe?8:0; cx.shadowColor='#ffd700';
+    cx.fillText(`${medal||('#'+(i+1)+'  ')}${en.username||'Player'}`, rowX+8, y+20);
+    cx.font=`11px 'Courier New'`; cx.fillStyle='rgba(255,255,255,0.4)'; cx.shadowBlur=0;
+    cx.fillText(`${en.flingCount} flung · combo x${en.maxCombo}`, rowX+8, y+38);
+    cx.font=`bold 18px 'Courier New'`; cx.textAlign='right'; cx.fillStyle=isMe?'#ffd700':'#00ffff'; cx.shadowBlur=isMe?8:4; cx.shadowColor=isMe?'#ffd700':'#00ffff';
+    cx.fillText(en.score, rowX+rowW-8, y+24);
+  });
+  cx.restore();
+}
+document.getElementById('lb-canvas').addEventListener('click', e => {
+  const cv = document.getElementById('lb-canvas');
+  const dpr = window.devicePixelRatio||1;
+  const W2 = cv.width/dpr;
+  const tabs=['daily','weekly','allTime'];
+  const tw=Math.min(320,W2-40)/3, tx0=(W2-tw*3)/2;
+  const rect = cv.getBoundingClientRect();
+  const mx = e.clientX - rect.left, my = e.clientY - rect.top;
+  if (my>=44&&my<=68) {
+    tabs.forEach((tab,i)=>{ if(mx>=tx0+i*tw&&mx<=tx0+(i+1)*tw){ lbModalTab=tab; renderLbModal(); }});
+  }
+});
+document.getElementById('btn-lb-close').addEventListener('click', () => document.getElementById('lb-modal').classList.remove('show'));
+
 async function submitScore(sc, fc, mc) {
-  if (!fbDb || !currentUser) return;
+  if (!fbDb || !currentUser || !currentUser.emailVerified) return;
   try {
     const now = new Date();
-    await fbDb.collection('scores').add({
-      userId:      currentUser.uid,
-      displayName: (currentUser.displayName || currentUser.email || 'Player').split(' ')[0],
-      photoURL:    currentUser.photoURL || null,
-      score: sc, flingCount: fc, maxCombo: mc,
-      dayKey:  now.toISOString().split('T')[0],
-      weekKey: getWeekKey(now),
-      createdAt: firebase.firestore.FieldValue.serverTimestamp()
-    });
+    const ref = fbDb.collection('scores').doc(currentUser.uid);
+    const doc = await ref.get();
+    if (!doc.exists || doc.data().score < sc) {
+      await ref.set({
+        userId:   currentUser.uid,
+        username: currentUsername || currentUser.email.split('@')[0],
+        score: sc, flingCount: fc, maxCombo: mc,
+        dayKey:  now.toISOString().split('T')[0],
+        weekKey: getWeekKey(now),
+        updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+      });
+    }
   } catch(e) { console.warn('Score submit failed', e); }
 }
 
@@ -234,20 +516,16 @@ async function fetchLeaderboard() {
   const now = new Date();
   const today = now.toISOString().split('T')[0];
   const week  = getWeekKey(now);
-  const topPerUser = rows => {
-    const seen = {};
-    return rows.filter(r => { if(seen[r.userId]) return false; seen[r.userId]=true; return true; }).slice(0,50);
-  };
   try {
     const [d,w,a] = await Promise.all([
-      fbDb.collection('scores').where('dayKey','==',today).orderBy('score','desc').limit(200).get(),
-      fbDb.collection('scores').where('weekKey','==',week).orderBy('score','desc').limit(200).get(),
-      fbDb.collection('scores').orderBy('score','desc').limit(200).get()
+      fbDb.collection('scores').where('dayKey','==',today).orderBy('score','desc').limit(50).get(),
+      fbDb.collection('scores').where('weekKey','==',week).orderBy('score','desc').limit(50).get(),
+      fbDb.collection('scores').orderBy('score','desc').limit(50).get()
     ]);
     return {
-      daily:   topPerUser(d.docs.map(x=>x.data())),
-      weekly:  topPerUser(w.docs.map(x=>x.data())),
-      allTime: topPerUser(a.docs.map(x=>x.data()))
+      daily:   d.docs.map(x=>x.data()),
+      weekly:  w.docs.map(x=>x.data()),
+      allTime: a.docs.map(x=>x.data())
     };
   } catch(e) { console.warn('Leaderboard fetch failed', e); return {daily:[],weekly:[],allTime:[]}; }
 }
@@ -271,12 +549,15 @@ function resize() {
 resize(); window.addEventListener('resize', resize);
 
 // ─── AUDIO (with recording destination) ──
-let AC = null, audioDestNode = null;
+let AC = null, audioDestNode = null, musicGain = null;
 
 function initAudio() {
   if (!AC) {
     AC = new (window.AudioContext || window.webkitAudioContext)();
     audioDestNode = AC.createMediaStreamDestination();
+    musicGain = AC.createGain();
+    musicGain.gain.value = musicVol;
+    musicGain.connect(AC.destination);
   }
   if (AC.state === 'suspended') AC.resume().catch(()=>{});
 }
@@ -290,7 +571,8 @@ function beep(freq, type, dur, vol, freqEnd) {
       if (audioDestNode) g.connect(audioDestNode);
       o.type = type||'sine'; o.frequency.setValueAtTime(freq, t);
       if (freqEnd) o.frequency.exponentialRampToValueAtTime(Math.max(0.01,freqEnd), t+dur);
-      g.gain.setValueAtTime(vol||0.2, t); g.gain.exponentialRampToValueAtTime(0.001, t+dur);
+      const v = (vol||0.2) * sfxVol;
+      g.gain.setValueAtTime(v, t); g.gain.exponentialRampToValueAtTime(0.001, t+dur);
       o.start(t); o.stop(t+dur);
     } catch(e) {}
   };
@@ -323,13 +605,14 @@ function musicTick(){
   if(AC.state!=='running'){AC.resume().catch(()=>{});return;}
   const s=musicBeat%8, t=AC.currentTime;
   // Kick — low-frequency sweep (808 style)
-  if(MK[s]){const o=AC.createOscillator(),g=AC.createGain();o.connect(g);g.connect(AC.destination);if(audioDestNode)g.connect(audioDestNode);o.type='sine';o.frequency.setValueAtTime(190,t);o.frequency.exponentialRampToValueAtTime(38,t+0.18);g.gain.setValueAtTime(0.45,t);g.gain.exponentialRampToValueAtTime(0.001,t+0.22);o.start(t);o.stop(t+0.22);}
+  const md=musicGain||AC.destination;
+  if(MK[s]){const o=AC.createOscillator(),g=AC.createGain();o.connect(g);g.connect(md);if(audioDestNode)g.connect(audioDestNode);o.type='sine';o.frequency.setValueAtTime(190,t);o.frequency.exponentialRampToValueAtTime(38,t+0.18);g.gain.setValueAtTime(0.45,t);g.gain.exponentialRampToValueAtTime(0.001,t+0.22);o.start(t);o.stop(t+0.22);}
   // Snare — short sawtooth burst
-  if(MS[s]){const o=AC.createOscillator(),g=AC.createGain();o.connect(g);g.connect(AC.destination);if(audioDestNode)g.connect(audioDestNode);o.type='sawtooth';o.frequency.value=200;g.gain.setValueAtTime(0.13,t);g.gain.exponentialRampToValueAtTime(0.001,t+0.11);o.start(t);o.stop(t+0.11);}
+  if(MS[s]){const o=AC.createOscillator(),g=AC.createGain();o.connect(g);g.connect(md);if(audioDestNode)g.connect(audioDestNode);o.type='sawtooth';o.frequency.value=200;g.gain.setValueAtTime(0.13,t);g.gain.exponentialRampToValueAtTime(0.001,t+0.11);o.start(t);o.stop(t+0.11);}
   // Bass — deep sine
-  if(MB[s]){const o=AC.createOscillator(),g=AC.createGain();o.connect(g);g.connect(AC.destination);if(audioDestNode)g.connect(audioDestNode);o.type='sine';o.frequency.value=MB[s];g.gain.setValueAtTime(0.28,t);g.gain.exponentialRampToValueAtTime(0.001,t+0.32);o.start(t);o.stop(t+0.32);}
+  if(MB[s]){const o=AC.createOscillator(),g=AC.createGain();o.connect(g);g.connect(md);if(audioDestNode)g.connect(audioDestNode);o.type='sine';o.frequency.value=MB[s];g.gain.setValueAtTime(0.28,t);g.gain.exponentialRampToValueAtTime(0.001,t+0.32);o.start(t);o.stop(t+0.32);}
   // Hi-hat — high-frequency square (open/closed alternating)
-  if(MH[s]){const v=s%2===0?0.07:0.04,d=s%2===0?0.05:0.03;const o=AC.createOscillator(),g=AC.createGain();o.connect(g);g.connect(AC.destination);if(audioDestNode)g.connect(audioDestNode);o.type='square';o.frequency.value=7200+s*200;g.gain.setValueAtTime(v,t);g.gain.exponentialRampToValueAtTime(0.001,t+d);o.start(t);o.stop(t+d);}
+  if(MH[s]){const v=s%2===0?0.07:0.04,d=s%2===0?0.05:0.03;const o=AC.createOscillator(),g=AC.createGain();o.connect(g);g.connect(md);if(audioDestNode)g.connect(audioDestNode);o.type='square';o.frequency.value=7200+s*200;g.gain.setValueAtTime(v,t);g.gain.exponentialRampToValueAtTime(0.001,t+d);o.start(t);o.stop(t+d);}
   musicBeat++;
 }
 function startBgMusic(){if(bgMusicTimer)return;musicBeat=0;bgMusicTimer=setInterval(musicTick,MUSIC_STEP);}
@@ -453,7 +736,7 @@ class Chain {
 // ─── ENEMY ───────────────────────────────
 const ETYPES=[
   {name:'chaser',  col:'#ff3355',glow:'#ff0033',sz:17,spd:65, pts:1,shape:'tri',hp:1},
-  {name:'tank',    col:'#9944ff',glow:'#7700ee',sz:25,spd:38, pts:3,shape:'hex',hp:2},
+  {name:'tank',    col:'#9944ff',glow:'#7700ee',sz:25,spd:62, pts:3,shape:'hex',hp:1,liner:true},
   {name:'speeder', col:'#33ffaa',glow:'#00ff88',sz:11,spd:120,pts:2,shape:'dia',hp:1},
   {name:'bomb',    col:'#ff7700',glow:'#ff6600',sz:19,spd:55, pts:4,shape:'bomb',hp:1,bomb:true},
   {name:'dodger',  col:'#ffff33',glow:'#ffcc00',sz:15,spd:70, pts:3,shape:'tri',hp:1,dodges:true},
@@ -467,6 +750,9 @@ class Enemy {
     this.angle=Math.random()*Math.PI*2; this.chained=false; this.projectile=false;
     this.chainAngle=0; this.vx=0; this.vy=0;
     this.fuseTimer=type.bomb?2.5:999; this.dodgeTimer=Math.random()*2; this.dodgeDir=1;
+    this.dashDir=this.liner?Math.atan2(H/2-y,W/2-x):Math.random()*Math.PI*2;
+    this.dashTimer=this.liner?0.8+Math.random()*0.4:0;
+    this.onScreen=false;
   }
   update(dt,px,py,bx,by){
     if(this.chained)return;
@@ -476,6 +762,30 @@ class Enemy {
       const spd=Math.sqrt(this.vx*this.vx+this.vy*this.vy);
       if(spd<1.5&&spd>0.01){const s=1.5/spd;this.vx*=s;this.vy*=s;}
       this.projLife=(this.projLife||0)+dt; if(this.projLife>4)this.dead=true; return;
+    }
+    if(this.liner){
+      if(!this.onScreen&&this.x>0&&this.x<W&&this.y>0&&this.y<H)this.onScreen=true;
+      const cx=W/2,cy=H/2;
+      const cdx=cx-this.x,cdy=cy-this.y;
+      const distC=Math.sqrt(cdx*cdx+cdy*cdy);
+      if(distC<this.sz*8){
+        // Within 4 widths of centre — lock on and hold line
+        this.dashDir=Math.atan2(cdy,cdx);
+        this.dashTimer=1.5;
+      } else {
+        this.dashTimer-=dt;
+        if(this.dashTimer<=0){
+          const toAngle=Math.atan2(py-this.y,px-this.x);
+          const sign=Math.random()>.5?1:-1;
+          this.dashDir=toAngle+sign*(Math.PI*(35/180)+Math.random()*Math.PI*(30/180));
+          this.dashTimer=1.0+Math.random()*1.0;
+          if(this.onScreen)this.spd=Math.min(this.spd*1.1,150);
+        }
+      }
+      this.x+=Math.cos(this.dashDir)*this.spd*dt;
+      this.y+=Math.sin(this.dashDir)*this.spd*dt;
+      this.angle+=dt*2;
+      return;
     }
     const dx=px-this.x,dy=py-this.y,d=Math.sqrt(dx*dx+dy*dy)||1;
     if(this.dodges){
@@ -509,7 +819,7 @@ class Enemy {
       case 'bomb': for(let i=0;i<8;i++){const a=i/8*Math.PI*2-Math.PI/8;i?ctx.lineTo(Math.cos(a)*s,Math.sin(a)*s):ctx.moveTo(Math.cos(a)*s,Math.sin(a)*s);}break;
     }
     ctx.closePath();ctx.fill();ctx.stroke();
-    if(this.hp>1&&!chained){ctx.globalAlpha=1;ctx.font=`bold ${s*.8}px Courier New`;ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillStyle='#fff';ctx.shadowBlur=0;ctx.fillText(this.hp,0,0);}
+
     if(this.bomb&&!chained){
       const ratio=Math.max(0,this.fuseTimer/2.5);
       // Clear shadow before drawing fuse ring to avoid bleed
@@ -579,38 +889,35 @@ function startLiveRecord(){
 }
 
 // Called immediately from die() — takes ownership so a quick retry can't corrupt data.
-function captureFinalVideo(){
-  const snapChunks=liveChunks;  // take reference; current recorder still writes here via closure
-  liveChunks=[];                // global reassigned — initGame()/stopActiveStream() only clear this new one
-  const windowAge=Date.now()-recWindowStart; // how long has current window been recording?
-  const snapMT=liveRecMT;
-  const snapPrev=prevBlob; prevBlob=null;
-  const mr=liveRecorder;liveRecorder=null;
+function captureFinalVideo(stopDelay=2000,forceCurrentWindow=false){
+  if(rollTimer){clearInterval(rollTimer);rollTimer=null;}
   if(videoURL){URL.revokeObjectURL(videoURL);videoURL=null;}videoBlob=null;
+  const snapChunks=liveChunks;
+  liveChunks=[];
+  const windowAge=Date.now()-recWindowStart;
+  const snapMT=liveRecMT;
+  const snapPrev=prevBlob;prevBlob=null;
+  const mr=liveRecorder;liveRecorder=null;
   let built=false;
   function buildBlob(){
     if(built)return;built=true;
-    // Only use current window if it has recorded ≥3s of gameplay (guards against death right after a roll)
-    if(snapChunks.length>0&&windowAge>=3000){
+    // forceCurrentWindow (victory): always use current window so gameplay+victory are both in clip
+    if(snapChunks.length>0&&(forceCurrentWindow||windowAge>=3000)){
       videoBlob=new Blob(snapChunks,{type:snapMT||'video/mp4'});
       videoURL=URL.createObjectURL(videoBlob);
-    } else if(snapPrev){
-      // Window too fresh — use previous complete 10s recording
+    }else if(snapPrev){
       videoBlob=snapPrev;
       videoURL=URL.createObjectURL(videoBlob);
-    } else if(snapChunks.length>0){
-      // No prev available (first game window) — use what we have
+    }else if(snapChunks.length>0){
       videoBlob=new Blob(snapChunks,{type:snapMT||'video/mp4'});
       videoURL=URL.createObjectURL(videoBlob);
     }
   }
   if(mr&&mr.state!=='inactive'){
-    mr.ondataavailable=e=>{if(e.data.size>0)snapChunks.push(e.data);}; // capture game-over screen
+    mr.ondataavailable=e=>{if(e.data.size>0)snapChunks.push(e.data);};
     mr.onstop=buildBlob;
-    setTimeout(()=>{try{mr.stop();}catch(e){buildBlob();}},2000); // 2s — captures game-over/score
-  }else{
-    buildBlob();
-  }
+    setTimeout(()=>{try{mr.stop();}catch(e){buildBlob();}},stopDelay);
+  }else{buildBlob();}
 }
 
 // ─── VICTORY / LEADERBOARD ───────────────
@@ -654,10 +961,11 @@ function drawVictory(dt){
 
   drawP();drawFT();
 
-  // Share prompt after 10s
+  // Share prompt + HOME after 10s
   if(t>10){
     const pulse=0.6+Math.sin(t*4)*0.4;
-    ctx.save();ctx.globalAlpha=pulse;ctx.font=`bold 18px 'Courier New'`;ctx.textAlign='center';ctx.fillStyle='#00ffff';ctx.shadowBlur=22;ctx.shadowColor='#00ffff';ctx.fillText('[ SHARE YOUR ACHIEVEMENT ]',W/2,H-16);ctx.restore();
+    ctx.save();ctx.globalAlpha=pulse;ctx.font=`bold 18px 'Courier New'`;ctx.textAlign='center';ctx.fillStyle='#00ffff';ctx.shadowBlur=22;ctx.shadowColor='#00ffff';ctx.fillText('[ SHARE YOUR ACHIEVEMENT ]',W/2,H-36);ctx.restore();
+    ctx.save();ctx.globalAlpha=0.5;ctx.font=`12px 'Courier New'`;ctx.textAlign='center';ctx.fillStyle='rgba(255,255,255,0.5)';ctx.shadowBlur=0;ctx.fillText('⌂ HOME',W/2,H-12);ctx.restore();
   }
 
 
@@ -700,7 +1008,7 @@ function drawLbPanel(px,py,pw,ph,elapsed){
     if(medal){ctx.font='16px serif';ctx.fillText(medal,px+12,ry+28);}
     else{ctx.font=`bold 13px 'Courier New'`;ctx.textAlign='left';ctx.fillStyle=isMe?'#ffd700':'rgba(255,255,255,0.45)';ctx.shadowBlur=isMe?5:0;ctx.shadowColor='#ffd700';ctx.fillText(`#${ri+1}`,px+10,ry+28);}
     ctx.restore();
-    ctx.save();ctx.font=`${isMe?'bold ':''}13px 'Courier New'`;ctx.textAlign='left';ctx.fillStyle=isMe?'#fff':'rgba(255,255,255,0.65)';ctx.shadowBlur=isMe?4:0;ctx.shadowColor='#fff';ctx.fillText((en2.displayName||'Player').substring(0,14).toUpperCase()+(isMe?' ◀':''),px+56,ry+28);ctx.restore();
+    ctx.save();ctx.font=`${isMe?'bold ':''}13px 'Courier New'`;ctx.textAlign='left';ctx.fillStyle=isMe?'#fff':'rgba(255,255,255,0.65)';ctx.shadowBlur=isMe?4:0;ctx.shadowColor='#fff';ctx.fillText((en2.username||'Player').substring(0,14).toUpperCase()+(isMe?' ◀':''),px+56,ry+28);ctx.restore();
     ctx.save();ctx.font=`bold 15px 'Courier New'`;ctx.textAlign='right';ctx.fillStyle=isMe?'#ffd700':'#00ffff';ctx.shadowBlur=isMe?10:4;ctx.shadowColor=isMe?'#ffd700':'#00ffff';ctx.fillText((en2.score||0).toLocaleString(),px+pw-12,ry+28);
     ctx.font=`10px 'Courier New'`;ctx.fillStyle='rgba(255,255,255,0.28)';ctx.shadowBlur=0;ctx.fillText(`⛓ ${en2.flingCount||0}`,px+pw-12,ry+44);ctx.restore();
     ctx.save();ctx.strokeStyle='rgba(255,255,255,0.06)';ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(px+8,ry+LB_ROW_H-1);ctx.lineTo(px+pw-8,ry+LB_ROW_H-1);ctx.stroke();ctx.restore();
@@ -789,7 +1097,7 @@ function checkCollisions(){
         if(flingKillCount===0)flingStreak=Math.min(flingStreak+1,9); // first kill of fling → streak up
         flingKillCount++;
         const tm=Math.max(1,flingMult+flingStreak);const pts=Math.round(e.pts*tm);score+=pts;flingCount++;combo++;if(combo>maxCombo)maxCombo=combo;
-        const killTxt=tm>1?`${e.pts} x${tm}`:`+${pts}`;txt(e.x,e.y-22,killTxt,e.col,combo>=3?24:18);if(combo>=3){snd('combo');txt(p.x,p.y-50,`COMBO x${combo}!`,'#ff88ff',28);}e.dead=true;shake(6);if(flingCount===5)txt(W/2,H/2-60,'NICE SHOT!','#ffff00',34);if(flingCount===15)txt(W/2,H/2-60,'ON FIRE!!','#ff6600',40);if(flingCount===30)txt(W/2,H/2-60,'UNSTOPPABLE!!!','#ff44ff',46);}
+        const killTxt=tm>1?`${e.pts} x${tm}`:`+${pts}`;txt(e.x,e.y-22,killTxt,e.col,combo>=3?24:18);if(combo>=3){snd('combo');txt(p.x,p.y-50,`COMBO x${combo}!`,'#ff88ff',28);}e.dead=true;shake(6);if(flingCount===5)txt(W/2,H*.84,'NICE SHOT!','#ffff00',34);if(flingCount===15)txt(W/2,H*.84,'ON FIRE!!','#ff6600',40);if(flingCount===30)txt(W/2,H*.84,'UNSTOPPABLE!!!','#ff44ff',46);}
       const spd=Math.sqrt(p.vx*p.vx+p.vy*p.vy)||0.001;if(spd<2.5){p.vx=p.vx/spd*2.5;p.vy=p.vy/spd*2.5;}
     }
   });});
@@ -835,7 +1143,7 @@ function die(){
   const isNew=score>bestScore;
   if(isNew){bestScore=score;localStorage.setItem('cp_best',bestScore);newRec=true;}
   submitScore(score,flingCount,maxCombo);
-  captureFinalVideo(); // immediately takes ownership; retry-safe
+  captureFinalVideo(isNew?3500:2000,isNew); // victory: gameplay window + 3.5s of victory animation
   if(isNew){
     state=ST.VICTORY;victoryTimer=0;lbScrollDone=false;lbScrollPos=0;lastLbTickIdx=0;lbTab='daily';
     snd('victory');
@@ -878,7 +1186,7 @@ function drawHUD(){
   const bw=80,bh=7,bx=W-20-bw,by=pt+54;ctx.fillStyle='rgba(255,255,255,.12)';ctx.fillRect(bx,by,bw,bh);
   const hg=ctx.createLinearGradient(bx,by,bx+bw,by);hg.addColorStop(0,'#00ff88');hg.addColorStop(.5,'#ffaa00');hg.addColorStop(1,'#ff2200');ctx.fillStyle=hg;ctx.shadowBlur=chain.heat>.6?10:0;ctx.shadowColor='#ff4400';ctx.fillRect(bx,by,bw*chain.heat,bh);ctx.font=`bold 13px 'Courier New'`;ctx.fillStyle='rgba(255,255,255,.6)';ctx.shadowBlur=0;ctx.fillText('HEAT',W-20,by+bh+14);ctx.restore();
   if(waveLabelTimer>0){const a=Math.min(1,waveLabelTimer)*Math.min(1,waveLabelTimer/.4);ctx.save();ctx.globalAlpha=a;ctx.font=`bold 26px 'Courier New'`;ctx.textAlign='center';ctx.fillStyle='#00ffff';ctx.shadowBlur=18;ctx.shadowColor='#00ffff';ctx.fillText(waveLabel,W/2,H/2+90);ctx.restore();}
-  if(combo>=2){ctx.save();ctx.font=`bold ${14+combo*2}px 'Courier New'`;ctx.textAlign='left';ctx.fillStyle='#ff88ff';ctx.shadowBlur=10;ctx.shadowColor='#ff44ff';ctx.globalAlpha=.9;ctx.fillText(`x${combo}`,pt,H/2);ctx.restore();}
+
   if(chain.chained.length>=2&&flingCount===0){const p=.5+Math.sin(bgT*5)*.5;ctx.save();ctx.globalAlpha=p*.9;ctx.font=`14px 'Courier New'`;ctx.textAlign='center';ctx.fillStyle='#00ffff';ctx.shadowBlur=8;ctx.shadowColor='#00ffff';ctx.fillText('FAST SWIPE TO FLING!',W/2,H-50);ctx.restore();}
   // Live multiplier — always visible bottom-right
   // Chain size (≥2 activates mult) + fling streak
@@ -897,7 +1205,7 @@ function drawHUD(){
 let splashT=0;
 function drawSplash(){
   splashT+=.016;drawBG();
-  ctx.save();const cx=W/2,cy=H/2+30;
+  ctx.save();const cx=W/2,cy=H/2-10;
   for(let i=0;i<10;i++){
     const t=splashT*1.3+i*.38,nx=cx+Math.cos(t)*(55+i*7),ny=cy+Math.sin(t*.75)*45+i*10;
     ctx.strokeStyle=`hsla(${175+i*8},100%,65%,${.35+Math.sin(t)*.15})`;ctx.lineWidth=3;ctx.shadowBlur=7;ctx.shadowColor=ctx.strokeStyle;
@@ -905,15 +1213,26 @@ function drawSplash(){
     ctx.fillStyle=i===9?'#ffdd00':'#888';ctx.shadowColor=i===9?'#ff8800':'#888';ctx.shadowBlur=i===9?14:5;ctx.beginPath();ctx.arc(nx,ny,i===9?12:3.5,0,Math.PI*2);ctx.fill();
   }ctx.restore();
   const fs=Math.min(W*.13,72);ctx.save();const pulse=1+Math.sin(splashT*2)*.02;ctx.scale(pulse,pulse);
-  ctx.font=`bold ${fs}px 'Courier New'`;ctx.textAlign='center';ctx.fillStyle='#fff';ctx.shadowBlur=28;ctx.shadowColor='#00ffff';ctx.fillText('CHAIN',(W/2)/pulse,(H/2-85)/pulse);
-  ctx.fillStyle='#ffaa00';ctx.shadowColor='#ff5500';ctx.fillText('PANIC',(W/2)/pulse,(H/2-85+fs*1.05)/pulse);ctx.restore();
-  ctx.save();ctx.font=`12px 'Courier New'`;ctx.textAlign='center';ctx.fillStyle='rgba(0,255,255,.55)';ctx.fillText('CHAIN • FLING • DESTROY',W/2,H/2+165);ctx.restore();
-  if(Math.sin(splashT*3)>0){ctx.save();ctx.font=`15px 'Courier New'`;ctx.textAlign='center';ctx.fillStyle='rgba(255,255,255,.85)';ctx.shadowBlur=8;ctx.shadowColor='#fff';ctx.fillText('TAP TO PLAY',W/2,H/2+145);ctx.restore();}
-  // How to play link
+  ctx.font=`bold ${fs}px 'Courier New'`;ctx.textAlign='center';ctx.fillStyle='#fff';ctx.shadowBlur=28;ctx.shadowColor='#00ffff';ctx.fillText('CHAIN',(W/2)/pulse,(H/2-120)/pulse);
+  ctx.fillStyle='#ffaa00';ctx.shadowColor='#ff5500';ctx.fillText('PANIC',(W/2)/pulse,(H/2-120+fs*1.05)/pulse);ctx.restore();
+  // TAP TO PLAY
+  if(Math.sin(splashT*3)>0){ctx.save();ctx.font=`bold 16px 'Courier New'`;ctx.textAlign='center';ctx.fillStyle='rgba(255,255,255,.9)';ctx.shadowBlur=10;ctx.shadowColor='#fff';ctx.fillText('▶  TAP TO PLAY',W/2,H/2+60);ctx.restore();}
+  // LEADERBOARD button
+  const lbY=H/2+105;
+  ctx.save();ctx.fillStyle='rgba(0,255,255,0.08)';roundRect(ctx,W/2-90,lbY-22,180,36,10);ctx.fill();
+  ctx.strokeStyle='rgba(0,255,255,0.4)';ctx.lineWidth=1.5;roundRect(ctx,W/2-90,lbY-22,180,36,10);ctx.stroke();
+  ctx.font=`bold 12px 'Courier New'`;ctx.textAlign='center';ctx.fillStyle='#00ffff';ctx.shadowBlur=8;ctx.shadowColor='#00ffff';ctx.fillText('🏆  LEADERBOARD',W/2,lbY+1);ctx.restore();
+  // SETTINGS button
+  const stY=H/2+155;
+  ctx.save();ctx.fillStyle='rgba(255,255,255,0.04)';roundRect(ctx,W/2-90,stY-22,180,36,10);ctx.fill();
+  ctx.strokeStyle='rgba(255,255,255,0.2)';ctx.lineWidth=1.5;roundRect(ctx,W/2-90,stY-22,180,36,10);ctx.stroke();
+  ctx.font=`bold 12px 'Courier New'`;ctx.textAlign='center';ctx.fillStyle='rgba(255,255,255,0.6)';ctx.shadowBlur=0;ctx.fillText('⚙  SETTINGS',W/2,stY+1);ctx.restore();
+  // HOW TO PLAY
   const hp=.4+Math.sin(splashT*2.5)*.6;
   ctx.save();ctx.globalAlpha=hp;ctx.font=`11px 'Courier New'`;ctx.textAlign='center';ctx.fillStyle='rgba(0,255,255,0.7)';ctx.shadowBlur=6;ctx.shadowColor='#00ffff';ctx.fillText('❓ HOW TO PLAY',W/2,H-28);ctx.restore();
   drawP();drawFT();
 }
+function roundRect(c,x,y,w,h,r){c.beginPath();c.moveTo(x+r,y);c.lineTo(x+w-r,y);c.arcTo(x+w,y,x+w,y+r,r);c.lineTo(x+w,y+h-r);c.arcTo(x+w,y+h,x+w-r,y+h,r);c.lineTo(x+r,y+h);c.arcTo(x,y+h,x,y+h-r,r);c.lineTo(x,y+r);c.arcTo(x,y,x+r,y,r);c.closePath();}
 
 // ─── DEAD SCREEN ─────────────────────────
 function drawDead(){
@@ -933,6 +1252,7 @@ function drawDead(){
   if(interactive){
     if(Math.sin(deathTimer*4)>0){ctx.font=`14px 'Courier New'`;ctx.fillStyle='rgba(255,255,255,.9)';ctx.shadowBlur=6;ctx.shadowColor='#fff';ctx.fillText('TAP TO RETRY',W/2,H/2+(newRec?158:140));}
     const sp=0.7+Math.sin(deathTimer*3)*0.3;ctx.save();ctx.globalAlpha=sp;ctx.font=`bold 17px 'Courier New'`;ctx.fillStyle='#00ffff';ctx.shadowColor='#00ffff';ctx.shadowBlur=18;ctx.fillText('[ SHARE YOUR SCORE ]',W/2,H/2+(newRec?186:168));ctx.restore();
+    ctx.save();ctx.globalAlpha=0.5;ctx.font=`12px 'Courier New'`;ctx.fillStyle='rgba(255,255,255,0.5)';ctx.shadowBlur=0;ctx.fillText('⌂ HOME',W/2,H-24);ctx.restore();
   }ctx.restore();
 }
 
@@ -1048,17 +1368,27 @@ function onStart(e){
   swipeHistory=[[t.clientX,t.clientY,performance.now()]];
   if(state===ST.PAUSE){state=ST.PLAY;lastTime=performance.now();startBgMusic();document.getElementById('btn-pause').textContent='PAUSE';return;}
   if(state===ST.SPLASH){
-    // How to play tap zone (bottom)
     if(t.clientY>H-50){document.getElementById('how-modal').classList.add('show');return;}
+    // LEADERBOARD button zone
+    const lbY=H/2+105;
+    if(t.clientX>W/2-90&&t.clientX<W/2+90&&t.clientY>lbY-22&&t.clientY<lbY+14){openLeaderboard();return;}
+    // SETTINGS button zone
+    const stY=H/2+155;
+    if(t.clientX>W/2-90&&t.clientX<W/2+90&&t.clientY>stY-22&&t.clientY<stY+14){openSettings();return;}
     state=ST.PLAY;initGame();return;
   }
   if(state===ST.DEAD&&(videoBlob||deathTimer>2.5)){
+    // HOME button
+    if(t.clientY>H-40){state=ST.SPLASH;return;}
     const shareY=H/2+(newRec?182:164);
     if(t.clientY>shareY-15&&t.clientY<shareY+25){openShareModal();return;}
     state=ST.PLAY;initGame();return;
   }
   if(state===ST.VICTORY&&victoryTimer>10){
-    if(t.clientY>H-44){openShareModal();return;}
+    // HOME button (bottom)
+    if(t.clientY>H-28){state=ST.SPLASH;return;}
+    // Share prompt
+    if(t.clientY>H-60&&t.clientY<=H-28){openShareModal();return;}
     if(t.clientY<H*0.25){state=ST.PLAY;initGame();return;}
     // Tab taps
     if(victoryTimer>3.5){
