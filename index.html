@@ -151,6 +151,11 @@ input[type=range]::-webkit-slider-thumb { -webkit-appearance:none; width:20px; h
     </div>
     <div class="settings-section" id="settings-user-section">
       <div class="settings-user" id="settings-user-info"></div>
+      <div id="settings-username-row" style="display:none;flex-direction:column;gap:6px;">
+        <input class="auth-inp" id="inp-change-username" type="text" placeholder="NEW USERNAME" maxlength="18" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
+        <button class="auth-btn" id="btn-change-username">CHANGE USERNAME</button>
+        <div id="username-change-msg" style="font-size:10px;text-align:center;min-height:14px;letter-spacing:0.5px"></div>
+      </div>
       <button id="btn-signout">SIGN OUT</button>
     </div>
     <button id="btn-settings-close">CLOSE</button>
@@ -437,11 +442,46 @@ document.getElementById('btn-how-close').addEventListener('click', () => documen
 function updateSettingsUser() {
   const sec = document.getElementById('settings-user-section');
   const info = document.getElementById('settings-user-info');
+  const unRow = document.getElementById('settings-username-row');
   if (currentUser) {
     sec.style.display = '';
     info.innerHTML = `Signed in as <b>${currentUsername || currentUser.email}</b>${currentUser.emailVerified ? '' : ' <span style="color:#ffaa00">(unverified)</span>'}`;
-  } else { sec.style.display = 'none'; }
+    unRow.style.display = 'flex';
+  } else {
+    sec.style.display = 'none';
+  }
 }
+async function doChangeUsername() {
+  const input = document.getElementById('inp-change-username');
+  const msgEl = document.getElementById('username-change-msg');
+  const name = input.value.trim();
+  msgEl.textContent = '';
+  const err = validateUsername(name);
+  if (err) { msgEl.style.color='#ff5555'; msgEl.textContent=err; return; }
+  if (name.toLowerCase() === (currentUsername||'').toLowerCase()) {
+    msgEl.style.color='#ffaa00'; msgEl.textContent="That's already your username"; return;
+  }
+  try {
+    const db = firebase.firestore();
+    const uid = currentUser.uid;
+    await db.collection('users').doc(uid).set({ username: name }, { merge: true });
+    const scoreRef = db.collection('scores').doc(uid);
+    const scoreDoc = await scoreRef.get();
+    if (scoreDoc.exists) await scoreRef.update({ username: name });
+    currentUsername = name;
+    localStorage.setItem('cp_username', name);
+    document.getElementById('user-name').textContent = name.toUpperCase();
+    input.value = '';
+    updateSettingsUser();
+    msgEl.style.color = '#00ff88'; msgEl.textContent = 'Username updated!';
+    setTimeout(() => { msgEl.textContent = ''; }, 2500);
+  } catch(e) {
+    msgEl.style.color = '#ff5555'; msgEl.textContent = 'Failed to update — please try again';
+  }
+}
+document.getElementById('btn-change-username').addEventListener('click', doChangeUsername);
+document.getElementById('inp-change-username').addEventListener('keydown', e => { if(e.key==='Enter') doChangeUsername(); });
+
 // ─── MODAL PAUSE HELPERS ─────────────────
 let pausedForModal = false;
 function pauseForModal() {
