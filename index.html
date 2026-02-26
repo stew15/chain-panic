@@ -45,8 +45,9 @@ canvas { display:block; position:fixed; top:0; left:0; }
 .how-text b { color:#fff; }
 #btn-how-close { margin-top:12px; width:100%; padding:11px; background:rgba(0,255,255,0.1); color:#00ffff; border:1.5px solid rgba(0,255,255,0.6); border-radius:30px; font-weight:bold; font-size:12px; letter-spacing:2px; cursor:pointer; font-family:'Courier New',monospace; text-shadow:0 0 8px #00ffff; flex-shrink:0; }
 
-#user-badge { display:none; position:fixed; top:14px; left:14px; z-index:50; align-items:center; gap:8px; background:rgba(0,255,255,0.1); border:1px solid rgba(0,255,255,0.3); border-radius:20px; padding:5px 11px 5px 5px; cursor:pointer; }
+#user-badge { display:none; position:fixed; top:14px; left:14px; z-index:50; align-items:center; justify-content:center; gap:8px; background:rgba(0,255,255,0.1); border:1px solid rgba(0,255,255,0.3); border-radius:20px; padding:5px 14px; cursor:pointer; }
 #user-badge.show { display:flex; }
+#user-name { text-align:center; }
 #user-avatar { width:24px; height:24px; border-radius:50%; object-fit:cover; background:#222; }
 #user-name   { font-size:10px; color:rgba(255,255,255,0.8); letter-spacing:1px; }
 #btn-login   { display:none; position:fixed; top:14px; left:14px; z-index:50; background:rgba(0,255,255,0.1); border:1px solid rgba(0,255,255,0.3); color:rgba(0,255,255,0.9); font-size:10px; padding:7px 13px; border-radius:20px; cursor:pointer; letter-spacing:1px; font-family:'Courier New',monospace; font-weight:bold; }
@@ -1198,7 +1199,7 @@ function die(){
   snd('death');shake(22);flashAlpha=1;spark(W/2,H/2,'#ff4400',30,7);
   const isNew=score>bestScore;
   if(isNew){bestScore=score;localStorage.setItem('cp_best',bestScore);newRec=true;}
-  submitScore(score,flingCount,maxCombo);
+  submitScore(bestScore,flingCount,maxCombo); // always submit all-time best, not just current game
   captureFinalVideo(isNew?3500:2000,isNew); // victory: gameplay window + 3.5s of victory animation
   if(isNew){
     state=ST.VICTORY;victoryTimer=0;lbScrollDone=false;lbScrollPos=0;lastLbTickIdx=0;lbTab='daily';
@@ -1268,19 +1269,16 @@ function drawSplash(){
     if(i>0){const pt2=splashT*1.3+(i-1)*.38,px2=cx+Math.cos(pt2)*(55+(i-1)*7),py2=cy+Math.sin(pt2*.75)*45+(i-1)*10;ctx.beginPath();ctx.moveTo(px2,py2);ctx.lineTo(nx,ny);ctx.stroke();}
     ctx.fillStyle=i===9?'#ffdd00':'#888';ctx.shadowColor=i===9?'#ff8800':'#888';ctx.shadowBlur=i===9?14:5;ctx.beginPath();ctx.arc(nx,ny,i===9?12:3.5,0,Math.PI*2);ctx.fill();
   }ctx.restore();
-  const fs=Math.min(W*.13,72);
-  const pulse=1+Math.sin(splashT*2)*.02;
-  const pfs=Math.round(fs*pulse); // animate font size, not canvas scale — keeps text crisp
-  ctx.save();ctx.font=`bold ${pfs}px 'Courier New'`;ctx.textAlign='center';
-  ctx.fillStyle='#fff';ctx.shadowBlur=18;ctx.shadowColor='#00ffff';ctx.fillText('CHAIN',W/2,H/2-120);
-  ctx.fillStyle='#ffaa00';ctx.shadowColor='#ff5500';ctx.fillText('PANIC',W/2,H/2-120+pfs*1.05);ctx.restore();
+  const fs=Math.min(W*.13,72);ctx.save();const pulse=1+Math.sin(splashT*2)*.02;ctx.scale(pulse,pulse);
+  ctx.font=`bold ${fs}px 'Courier New'`;ctx.textAlign='center';ctx.fillStyle='#fff';ctx.shadowBlur=28;ctx.shadowColor='#00ffff';ctx.fillText('CHAIN',(W/2)/pulse,(H/2-120)/pulse);
+  ctx.fillStyle='#ffaa00';ctx.shadowColor='#ff5500';ctx.fillText('PANIC',(W/2)/pulse,(H/2-120+fs*1.05)/pulse);ctx.restore();
   // TAP TO PLAY
   if(Math.sin(splashT*3)>0){ctx.save();ctx.font=`bold 16px 'Courier New'`;ctx.textAlign='center';ctx.fillStyle='rgba(255,255,255,.9)';ctx.shadowBlur=10;ctx.shadowColor='#fff';ctx.fillText('▶  TAP TO PLAY',W/2,H/2+60);ctx.restore();}
   // LEADERBOARD button
   const lbY=H/2+105;
   ctx.save();ctx.fillStyle='rgba(0,255,255,0.08)';roundRect(ctx,W/2-90,lbY-22,180,36,10);ctx.fill();
   ctx.strokeStyle='rgba(0,255,255,0.4)';ctx.lineWidth=1.5;roundRect(ctx,W/2-90,lbY-22,180,36,10);ctx.stroke();
-  ctx.font=`bold 12px 'Courier New'`;ctx.textAlign='center';ctx.fillStyle='#00ffff';ctx.shadowBlur=8;ctx.shadowColor='#00ffff';ctx.fillText('🏆  LEADERBOARD',W/2,lbY+1);ctx.restore();
+  ctx.font=`bold 12px 'Courier New'`;ctx.textAlign='center';ctx.fillStyle='#00ffff';ctx.shadowBlur=0;ctx.fillText('🏆  LEADERBOARD',W/2,lbY+1);ctx.restore();
   // SETTINGS button
   const stY=H/2+155;
   ctx.save();ctx.fillStyle='rgba(255,255,255,0.04)';roundRect(ctx,W/2-90,stY-22,180,36,10);ctx.fill();
@@ -1309,13 +1307,12 @@ function drawDead(){
   if(newRec){const rp=Math.round(20*(1+Math.sin(deathTimer*6)*.05));ctx.font=`bold ${rp}px 'Courier New'`;ctx.fillStyle='#ffff00';ctx.shadowColor='#ffff00';ctx.shadowBlur=22;ctx.fillText('🏆 NEW RECORD!',W/2,H/2+122);}
   const interactive=videoBlob||deathTimer>2.5;
   if(interactive){
-    if(Math.sin(deathTimer*4)>0){ctx.font=`14px 'Courier New'`;ctx.fillStyle='rgba(255,255,255,.9)';ctx.shadowBlur=6;ctx.shadowColor='#fff';ctx.fillText('TAP TO RETRY',W/2,H/2+(newRec?158:140));}
+    // TAP TO RETRY — top of screen, always prominent
+    if(Math.sin(deathTimer*4)>0){ctx.font=`bold 15px 'Courier New'`;ctx.fillStyle='rgba(255,255,255,.9)';ctx.shadowBlur=8;ctx.shadowColor='#fff';ctx.fillText('▶  TAP TO RETRY',W/2,H*0.12);}
+    // SHARE — same style as before
     const sp=0.7+Math.sin(deathTimer*3)*0.3;ctx.save();ctx.globalAlpha=sp;ctx.font=`bold 17px 'Courier New'`;ctx.fillStyle='#00ffff';ctx.shadowColor='#00ffff';ctx.shadowBlur=18;ctx.fillText('[ SHARE YOUR SCORE ]',W/2,H/2+(newRec?186:168));ctx.restore();
-    // HOME button — proper tappable button well above bottom edge
-    const homeY=H-88;ctx.save();
-    ctx.fillStyle='rgba(255,255,255,0.06)';roundRect(ctx,W/2-70,homeY-20,140,36,10);ctx.fill();
-    ctx.strokeStyle='rgba(255,255,255,0.25)';ctx.lineWidth=1.5;roundRect(ctx,W/2-70,homeY-20,140,36,10);ctx.stroke();
-    ctx.font=`bold 13px 'Courier New'`;ctx.textAlign='center';ctx.fillStyle='rgba(255,255,255,0.7)';ctx.shadowBlur=0;ctx.fillText('⌂  HOME',W/2,homeY+4);ctx.restore();
+    // HOME — same plain text style as SHARE, below it
+    const hp2=0.5+Math.sin(deathTimer*2.5)*0.2;ctx.save();ctx.globalAlpha=hp2;ctx.font=`bold 14px 'Courier New'`;ctx.fillStyle='rgba(255,255,255,0.65)';ctx.shadowBlur=0;ctx.fillText('[ HOME ]',W/2,H/2+(newRec?218:200));ctx.restore();
   }ctx.restore();
 }
 
@@ -1441,10 +1438,10 @@ function onStart(e){
     state=ST.PLAY;initGame();return;
   }
   if(state===ST.DEAD&&(videoBlob||deathTimer>2.5)){
-    // HOME button (drawn at H-88, button rect H-108 to H-72)
-    if(t.clientY>H-115&&t.clientY<H-60){state=ST.SPLASH;return;}
-    const shareY=H/2+(newRec?182:164);
-    if(t.clientY>shareY-15&&t.clientY<shareY+25){openShareModal();return;}
+    const shareY=H/2+(newRec?186:168);
+    const homeY=H/2+(newRec?218:200);
+    if(t.clientY>homeY-22&&t.clientY<homeY+22){state=ST.SPLASH;return;}
+    if(t.clientY>shareY-20&&t.clientY<shareY+20){openShareModal();return;}
     state=ST.PLAY;initGame();return;
   }
   if(state===ST.VICTORY&&victoryTimer>10){
