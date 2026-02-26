@@ -1187,7 +1187,7 @@ function checkCollisions(){
     if(d<p.sz+e.sz){
       e.hp--;spark(e.x,e.y,e.col,14,5);
       if(e.hp<=0){
-        if(flingKillCount===0){const ns=flingStreak+1;if(ns>bestFlingStreak)bestFlingStreak=ns;flingStreak=Math.min(ns,9);} // first kill of fling → streak up
+        if(flingKillCount===0){const ns=flingStreak+1;if(ns>bestFlingStreak)bestFlingStreak=ns;flingStreak=ns;} // first kill of fling → streak up
         flingKillCount++;
         const tm=Math.max(1,flingMult+flingStreak);const pts=Math.round(e.pts*tm);score+=pts;flingCount++;
         const killTxt=tm>1?`${e.pts} x${tm}`:`+${pts}`;txt(e.x,e.y-22,killTxt,e.col,18);e.dead=true;shake(6);if(flingCount===5)txt(W/2,H*.84,'NICE SHOT!','#ffff00',34);if(flingCount===15)txt(W/2,H*.84,'ON FIRE!!','#ff6600',40);if(flingCount===30)txt(W/2,H*.84,'UNSTOPPABLE!!!','#ff44ff',46);}
@@ -1281,17 +1281,27 @@ function drawHUD(){
   if(waveLabelTimer>0){const a=Math.min(1,waveLabelTimer)*Math.min(1,waveLabelTimer/.4);ctx.save();ctx.globalAlpha=a;ctx.font=`bold 26px 'Courier New'`;ctx.textAlign='center';ctx.fillStyle='#00ffff';ctx.shadowBlur=18;ctx.shadowColor='#00ffff';ctx.fillText(waveLabel,W/2,H/2+90);ctx.restore();}
 
   if(chain.chained.length>=2&&flingCount===0){const p=.5+Math.sin(bgT*5)*.5;ctx.save();ctx.globalAlpha=p*.9;ctx.font=`14px 'Courier New'`;ctx.textAlign='center';ctx.fillStyle='#00ffff';ctx.shadowBlur=8;ctx.shadowColor='#00ffff';ctx.fillText('FAST SWIPE TO FLING!',W/2,H-50);ctx.restore();}
-  // Live multiplier — always visible bottom-right
-  // Chain size (≥2 activates mult) + fling streak
-  const liveMult=Math.max(1,chain.chained.length)+flingStreak;
-  const multActive=liveMult>1;
-  const multLabel=multActive?`x${liveMult} MULT`:`x1 MULT`;
-  ctx.save();
-  ctx.font=`bold ${multActive?18:12}px 'Courier New'`;ctx.textAlign='right';
-  if(multActive){const p=0.75+Math.sin(bgT*6)*0.25;ctx.globalAlpha=p;}else{ctx.globalAlpha=0.25;}
-  ctx.fillStyle=multActive?'#ffaa00':'rgba(255,255,255,0.5)';
-  ctx.shadowBlur=multActive?14:0;ctx.shadowColor='#ff8800';
-  ctx.fillText(multLabel,W-16,H-16);ctx.restore();
+  // ─── HUD: CHAIN + STREAK (bottom-right) ───
+  ctx.save();ctx.textAlign='right';
+  // CHAIN — cyan, steady
+  const chainSz=chain.chained.length;
+  ctx.globalAlpha=chainSz>0?0.9:0.25;
+  ctx.font=`bold ${chainSz>0?16:12}px 'Courier New'`;
+  ctx.fillStyle='#00ffff';ctx.shadowBlur=chainSz>0?10:0;ctx.shadowColor='#00ffff';
+  ctx.fillText(`CHAIN x${chainSz}`,W-16,H-40);
+  // STREAK — scales in brightness/size, flashes at 10+
+  const sk=flingStreak;
+  let skCol,skSz,skAlpha,skBlur;
+  if(sk===0){skCol='rgba(255,255,255,0.4)';skSz=11;skAlpha=0.3;skBlur=0;}
+  else if(sk<=3){skCol='#ffaa00';skSz=14;skAlpha=0.9;skBlur=8;}
+  else if(sk<=6){skCol='#ff7700';skSz=16;skAlpha=0.95;skBlur=14;}
+  else if(sk<=9){skCol='#ff3300';skSz=18;skAlpha=1;skBlur=20;}
+  else{const fl=Math.sin(bgT*14)>0;skCol=fl?'#ff0000':'#ffcc00';skSz=20;skAlpha=1;skBlur=26+Math.abs(Math.sin(bgT*14))*10;}
+  ctx.globalAlpha=sk>=10?1:(sk>0?(0.75+Math.sin(bgT*6)*0.25):skAlpha);
+  ctx.font=`bold ${skSz}px 'Courier New'`;
+  ctx.fillStyle=skCol;ctx.shadowBlur=skBlur;ctx.shadowColor=skCol;
+  ctx.fillText(`STREAK x${sk}`,W-16,H-16);
+  ctx.restore();
 }
 
 // ─── SPLASH ───────────────────────────────
@@ -1523,8 +1533,7 @@ function onEnd(e){
         if(wasMiss)flingStreak=0;
         flingNum++;flingKillCount=0;
         flingMult=wasMiss?1:launched.length; // x1 on miss, chain-size bonus otherwise
-        const tm=Math.max(1,flingMult+flingStreak);
-        txt(W/2,H/2-40,`FLING! x${tm}`,'#00ffff',28);shake(10+launched.length*3);spark(chain.tip.x,chain.tip.y,'#00ffff',16,7);
+        shake(10+launched.length*3);spark(chain.tip.x,chain.tip.y,'#00ffff',16,7);
       }
     }
   }
